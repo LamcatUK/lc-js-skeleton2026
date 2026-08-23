@@ -39,13 +39,19 @@ echo "Add fields one at a time. Leave the field name blank to finish."
 echo "Supported types: text, textarea, richtext, image, url, link, number, select, checkbox"
 echo "Not yet supported by this generator: repeater, gallery, relationship, post_object, file"
 echo "— add those by hand in src/edit.js if a block needs one."
+echo "Each field also asks for optional help text and a column width (100/50/33/25) —"
+echo "consecutive fields under 100% share a row, e.g. two 50% CTAs side by side."
 echo ""
 
-field_names=()   # camelCase JS attribute name (or base name for image/link)
+field_names=()     # camelCase JS attribute name (or base name for image/link)
 field_types=()
-field_labels=()  # original human label
-field_snakes=()  # snake_case PHP variable name
-field_options=() # comma-separated options, select only
+field_labels=()    # original human label
+field_snakes=()    # snake_case PHP variable name
+field_options=()   # comma-separated options, select only
+field_ta_styles=() # textarea only: paragraph/list/linebreak
+field_link_targets=() # link only: 1 if an "open in new tab" toggle is wanted
+field_helps=()   # optional help text, shown under the control
+field_widths=()  # 100/50/33/25 — consecutive non-100 fields share a row
 
 while true; do
   read -p "Field name (blank to finish): " field_label
@@ -70,13 +76,44 @@ while true; do
     read -p "Comma-separated options for '${field_label}': " field_option_list
   fi
 
+  field_ta_style="paragraph"
+  if [ "$field_type" = "textarea" ]; then
+    read -p "Textarea style — paragraph/list/linebreak [paragraph]: " ta_style_input
+    field_ta_style="${ta_style_input:-paragraph}"
+    while [ "$field_ta_style" != "paragraph" ] && [ "$field_ta_style" != "list" ] && [ "$field_ta_style" != "linebreak" ]; do
+      read -p "Please enter 'paragraph', 'list', or 'linebreak' [paragraph]: " ta_style_input
+      field_ta_style="${ta_style_input:-paragraph}"
+    done
+  fi
+
+  field_link_target=0
+  if [ "$field_type" = "link" ]; then
+    read -p "Add an 'open in new tab' toggle for '${field_label}'? (y/n): " link_target_input
+    if [ "$link_target_input" = "y" ] || [ "$link_target_input" = "Y" ]; then
+      field_link_target=1
+    fi
+  fi
+
   field_label_display="$(echo "${field_label:0:1}" | tr '[:lower:]' '[:upper:]')${field_label:1}"
+
+  read -p "Help text shown under the field (optional): " field_help
+
+  read -p "Column width — 100/50/33/25 [100]: " field_width_input
+  field_width="${field_width_input:-100}"
+  while [ "$field_width" != "100" ] && [ "$field_width" != "50" ] && [ "$field_width" != "33" ] && [ "$field_width" != "25" ]; do
+    read -p "Please enter 100, 50, 33, or 25 [100]: " field_width_input
+    field_width="${field_width_input:-100}"
+  done
 
   field_names+=("$field_camel")
   field_types+=("$field_type")
   field_labels+=("$field_label_display")
   field_snakes+=("$field_snake")
   field_options+=("$field_option_list")
+  field_ta_styles+=("$field_ta_style")
+  field_link_targets+=("$field_link_target")
+  field_helps+=("$field_help")
+  field_widths+=("$field_width")
 done
 
 if [ ${#field_names[@]} -eq 0 ]; then
@@ -110,6 +147,9 @@ for i in "${!field_names[@]}"; do
     link)
       attr_lines+=("\t\t\"${name}Text\": { \"type\": \"string\", \"default\": \"\" }")
       attr_lines+=("\t\t\"${name}Url\": { \"type\": \"string\", \"default\": \"\" }")
+      if [ "${field_link_targets[$i]}" = "1" ]; then
+        attr_lines+=("\t\t\"${name}Target\": { \"type\": \"boolean\", \"default\": false }")
+      fi
       ;;
   esac
 done
@@ -132,7 +172,7 @@ cat > "${block_dir}/block.json" <<EOF
 	"apiVersion": 3,
 	"name": "${theme_slug}/${block_kebab}",
 	"title": "${block_name}",
-	"category": "layout",
+	"category": "${theme_slug}",
 	"icon": "cover-image",
 	"attributes": {
 $(printf "%b" "$attrs_json")
@@ -174,13 +214,17 @@ need_selectcontrol=0
 need_togglecontrol=0
 need_button=0
 
-for type in "${field_types[@]}"; do
+for i in "${!field_types[@]}"; do
+  type="${field_types[$i]}"
   case "$type" in
     text|url|number) need_textcontrol=1 ;;
     textarea) need_textareacontrol=1 ;;
     richtext) need_richtext=1 ;;
     image) need_media=1; need_button=1 ;;
-    link) need_textcontrol=1 ;;
+    link)
+      need_textcontrol=1
+      [ "${field_link_targets[$i]}" = "1" ] && need_togglecontrol=1
+      ;;
     select) need_selectcontrol=1 ;;
     checkbox) need_togglecontrol=1 ;;
   esac
@@ -205,33 +249,47 @@ for i in "${!field_names[@]}"; do
   type="${field_types[$i]}"
   case "$type" in
     image) attr_destructure+=("${name}Id" "${name}Url" "${name}Alt") ;;
-    link) attr_destructure+=("${name}Text" "${name}Url") ;;
+    link)
+      attr_destructure+=("${name}Text" "${name}Url")
+      [ "${field_link_targets[$i]}" = "1" ] && attr_destructure+=("${name}Target")
+      ;;
     *) attr_destructure+=("$name") ;;
   esac
 done
 attr_destructure_line=$(IFS=,; echo "${attr_destructure[*]}" | sed 's/,/, /g')
 
-controls=""
+# field_html[i] holds each field's own control markup; a second pass below
+# groups consecutive non-100%-width fields into flex rows (mirrors ACF's
+# wrapper.width side-by-side layout, e.g. a 50/50 pair of CTAs or a 33/33/33
+# badge trio) without affecting fields left at the 100% default.
+field_html=()
 for i in "${!field_names[@]}"; do
   name="${field_names[$i]}"
   type="${field_types[$i]}"
   label="${field_labels[$i]}"
+  help="${field_helps[$i]}"
+
+  help_attr=""
+  [ -n "$help" ] && help_attr="\n\t\t\t\thelp={ __( '${help}', '${theme_slug}' ) }"
+
+  help_para=""
+  [ -n "$help" ] && help_para="\n\t\t\t\t<p className=\"lc-js-skeleton-editor-field__help\">{ __( '${help}', '${theme_slug}' ) }</p>"
 
   case "$type" in
     text|url)
-      controls+="\t\t\t<TextControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }\n\t\t\t/>\n"
+      field_html+=("\t\t\t<TextControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }${help_attr}\n\t\t\t/>\n")
       ;;
     number)
-      controls+="\t\t\t<TextControl\n\t\t\t\ttype=\"number\"\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: Number( value ) } ) }\n\t\t\t/>\n"
+      field_html+=("\t\t\t<TextControl\n\t\t\t\ttype=\"number\"\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: Number( value ) } ) }${help_attr}\n\t\t\t/>\n")
       ;;
     textarea)
-      controls+="\t\t\t<TextareaControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }\n\t\t\t/>\n"
+      field_html+=("\t\t\t<TextareaControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }${help_attr}\n\t\t\t/>\n")
       ;;
     richtext)
-      controls+="\t\t\t<div className=\"lc-js-skeleton-editor-field\">\n\t\t\t\t<label className=\"lc-js-skeleton-editor-field__label\">{ __( '${label}', '${theme_slug}' ) }</label>\n\t\t\t\t<RichText\n\t\t\t\t\ttagName=\"div\"\n\t\t\t\t\tclassName=\"lc-js-skeleton-editor-field__control\"\n\t\t\t\t\taria-label={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\t\tplaceholder={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\t\tvalue={ ${name} }\n\t\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }\n\t\t\t\t/>\n\t\t\t</div>\n"
+      field_html+=("\t\t\t<div className=\"lc-js-skeleton-editor-field\">\n\t\t\t\t<label className=\"lc-js-skeleton-editor-field__label\">{ __( '${label}', '${theme_slug}' ) }</label>\n\t\t\t\t<RichText\n\t\t\t\t\ttagName=\"div\"\n\t\t\t\t\tclassName=\"lc-js-skeleton-editor-field__control\"\n\t\t\t\t\taria-label={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\t\tplaceholder={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\t\tvalue={ ${name} }\n\t\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }\n\t\t\t\t/>${help_para}\n\t\t\t</div>\n")
       ;;
     checkbox)
-      controls+="\t\t\t<ToggleControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tchecked={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }\n\t\t\t/>\n"
+      field_html+=("\t\t\t<ToggleControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tchecked={ ${name} }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }${help_attr}\n\t\t\t/>\n")
       ;;
     select)
       IFS=',' read -ra opts <<< "${field_options[$i]}"
@@ -240,15 +298,45 @@ for i in "${!field_names[@]}"; do
         opt_trimmed=$(echo "$opt" | sed 's/^ *//; s/ *$//')
         options_js+="\t\t\t\t\t{ label: '${opt_trimmed}', value: '${opt_trimmed}' },\n"
       done
-      controls+="\t\t\t<SelectControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\toptions={ [\n\t\t\t\t\t{ label: '', value: '' },\n$(printf "%b" "$options_js")\t\t\t\t] }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }\n\t\t\t/>\n"
+      field_html+=("\t\t\t<SelectControl\n\t\t\t\tlabel={ __( '${label}', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name} }\n\t\t\t\toptions={ [\n\t\t\t\t\t{ label: '', value: '' },\n$(printf "%b" "$options_js")\t\t\t\t] }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}: value } ) }${help_attr}\n\t\t\t/>\n")
       ;;
     image)
-      controls+="\t\t\t<div className=\"lc-js-skeleton-editor-field\">\n\t\t\t\t<label className=\"lc-js-skeleton-editor-field__label\">{ __( '${label}', '${theme_slug}' ) }</label>\n\t\t\t\t<MediaUploadCheck>\n\t\t\t\t\t<MediaUpload\n\t\t\t\t\t\tonSelect={ ( media ) =>\n\t\t\t\t\t\t\tsetAttributes( {\n\t\t\t\t\t\t\t\t${name}Id: media.id,\n\t\t\t\t\t\t\t\t${name}Url: media.url,\n\t\t\t\t\t\t\t\t${name}Alt: media.alt || '',\n\t\t\t\t\t\t\t} )\n\t\t\t\t\t\t}\n\t\t\t\t\t\tallowedTypes={ [ 'image' ] }\n\t\t\t\t\t\tvalue={ ${name}Id }\n\t\t\t\t\t\trender={ ( { open } ) => (\n\t\t\t\t\t\t\t<div className=\"lc-js-skeleton-editor-field__control\">\n\t\t\t\t\t\t\t\t{ ${name}Url && (\n\t\t\t\t\t\t\t\t\t<img\n\t\t\t\t\t\t\t\t\t\tsrc={ ${name}Url }\n\t\t\t\t\t\t\t\t\t\talt={ ${name}Alt }\n\t\t\t\t\t\t\t\t\t\tstyle={ { maxWidth: '200px', display: 'block', marginBottom: '8px' } }\n\t\t\t\t\t\t\t\t\t/>\n\t\t\t\t\t\t\t\t) }\n\t\t\t\t\t\t\t\t<Button variant=\"secondary\" onClick={ open }>\n\t\t\t\t\t\t\t\t\t{ ${name}Url ? __( 'Replace ${label}', '${theme_slug}' ) : __( 'Select ${label}', '${theme_slug}' ) }\n\t\t\t\t\t\t\t\t</Button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t) }\n\t\t\t\t\t/>\n\t\t\t\t</MediaUploadCheck>\n\t\t\t</div>\n"
+      field_html+=("\t\t\t<div className=\"lc-js-skeleton-editor-field\">\n\t\t\t\t<label className=\"lc-js-skeleton-editor-field__label\">{ __( '${label}', '${theme_slug}' ) }</label>\n\t\t\t\t<MediaUploadCheck>\n\t\t\t\t\t<MediaUpload\n\t\t\t\t\t\tonSelect={ ( media ) =>\n\t\t\t\t\t\t\tsetAttributes( {\n\t\t\t\t\t\t\t\t${name}Id: media.id,\n\t\t\t\t\t\t\t\t${name}Url: media.url,\n\t\t\t\t\t\t\t\t${name}Alt: media.alt || '',\n\t\t\t\t\t\t\t} )\n\t\t\t\t\t\t}\n\t\t\t\t\t\tallowedTypes={ [ 'image' ] }\n\t\t\t\t\t\tvalue={ ${name}Id }\n\t\t\t\t\t\trender={ ( { open } ) => (\n\t\t\t\t\t\t\t<div className=\"lc-js-skeleton-editor-field__control\">\n\t\t\t\t\t\t\t\t{ ${name}Url && (\n\t\t\t\t\t\t\t\t\t<img\n\t\t\t\t\t\t\t\t\t\tsrc={ ${name}Url }\n\t\t\t\t\t\t\t\t\t\talt={ ${name}Alt }\n\t\t\t\t\t\t\t\t\t\tstyle={ { maxWidth: '200px', display: 'block', marginBottom: '8px' } }\n\t\t\t\t\t\t\t\t\t/>\n\t\t\t\t\t\t\t\t) }\n\t\t\t\t\t\t\t\t<Button variant=\"secondary\" onClick={ open }>\n\t\t\t\t\t\t\t\t\t{ ${name}Url ? __( 'Replace ${label}', '${theme_slug}' ) : __( 'Select ${label}', '${theme_slug}' ) }\n\t\t\t\t\t\t\t\t</Button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t) }\n\t\t\t\t\t/>\n\t\t\t\t</MediaUploadCheck>${help_para}\n\t\t\t</div>\n")
       ;;
     link)
-      controls+="\t\t\t<TextControl\n\t\t\t\tlabel={ __( '${label} Text', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name}Text }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}Text: value } ) }\n\t\t\t/>\n\t\t\t<TextControl\n\t\t\t\ttype=\"url\"\n\t\t\t\tlabel={ __( '${label} URL', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name}Url }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}Url: value } ) }\n\t\t\t/>\n"
+      link_html="\t\t\t<TextControl\n\t\t\t\tlabel={ __( '${label} Text', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name}Text }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}Text: value } ) }\n\t\t\t/>\n\t\t\t<TextControl\n\t\t\t\ttype=\"url\"\n\t\t\t\tlabel={ __( '${label} URL', '${theme_slug}' ) }\n\t\t\t\tvalue={ ${name}Url }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}Url: value } ) }${help_attr}\n\t\t\t/>\n"
+      if [ "${field_link_targets[$i]}" = "1" ]; then
+        link_html+="\t\t\t<ToggleControl\n\t\t\t\tlabel={ __( 'Open ${label} in a new tab', '${theme_slug}' ) }\n\t\t\t\tchecked={ ${name}Target }\n\t\t\t\tonChange={ ( value ) => setAttributes( { ${name}Target: value } ) }\n\t\t\t/>\n"
+      fi
+      field_html+=("$link_html")
       ;;
   esac
+done
+
+# Group consecutive non-100%-width fields into flex rows.
+controls=""
+i=0
+field_count=${#field_names[@]}
+while [ $i -lt $field_count ]; do
+  width="${field_widths[$i]}"
+  if [ "$width" = "100" ]; then
+    controls+="${field_html[$i]}"
+    i=$((i + 1))
+  else
+    row_html=""
+    row_sum=0
+    while [ $i -lt $field_count ] && [ "${field_widths[$i]}" != "100" ] && [ "$row_sum" -lt 100 ]; do
+      w="${field_widths[$i]}"
+      # flex-grow set to the width value with a 0 basis, rather than a fixed
+      # percentage — lets the browser divide the row proportionally after
+      # subtracting the gap, so e.g. three 33% fields don't overflow to a
+      # wrapped fourth line the way 3 × 33% + 2 × gap would.
+      row_html+="\t\t\t\t<div style={ { flex: '${w} 1 0%' } }>\n${field_html[$i]}\t\t\t\t</div>\n"
+      row_sum=$((row_sum + w))
+      i=$((i + 1))
+    done
+    controls+="\t\t\t<div style={ { display: 'flex', flexWrap: 'wrap', gap: '12px' } }>\n${row_html}\t\t\t</div>\n"
+  fi
 done
 
 {
@@ -285,19 +373,29 @@ for i in "${!field_names[@]}"; do
   case "$type" in
     text|url|select)
       extract_lines+="\$${snake} = \$attributes['${name}'] ?? '';\n"
-      markup_lines+="\t<?php if ( \$${snake} ) : ?>\n\t\t<p><?php echo esc_html( \$${snake} ); ?></p>\n\t<?php endif; ?>\n"
+      markup_lines+="\t<?php if ( \$${snake} ) { ?>\n\t\t<p><?php echo esc_html( \$${snake} ); ?></p>\n\t<?php } ?>\n"
       ;;
     number)
       extract_lines+="\$${snake} = \$attributes['${name}'] ?? 0;\n"
-      markup_lines+="\t<?php if ( \$${snake} ) : ?>\n\t\t<p><?php echo esc_html( \$${snake} ); ?></p>\n\t<?php endif; ?>\n"
+      markup_lines+="\t<?php if ( \$${snake} ) { ?>\n\t\t<p><?php echo esc_html( \$${snake} ); ?></p>\n\t<?php } ?>\n"
       ;;
     textarea)
       extract_lines+="\$${snake} = \$attributes['${name}'] ?? '';\n"
-      markup_lines+="\t<?php if ( \$${snake} ) : ?>\n\t\t<div><?php echo wp_kses_post( wpautop( \$${snake} ) ); ?></div>\n\t<?php endif; ?>\n"
+      case "${field_ta_styles[$i]}" in
+        list)
+          markup_lines+="\t<?php if ( \$${snake} ) { ?>\n\t\t<ul>\n\t\t\t<?php foreach ( preg_split( '/\\\\r\\\\n|\\\\n|\\\\r/', \$${snake} ) as \$${snake}_line ) { \$${snake}_line = trim( \$${snake}_line ); if ( '' === \$${snake}_line ) { continue; } ?>\n\t\t\t\t<li><?php echo wp_kses_post( \$${snake}_line ); ?></li>\n\t\t\t<?php } ?>\n\t\t</ul>\n\t<?php } ?>\n"
+          ;;
+        linebreak)
+          markup_lines+="\t<?php if ( \$${snake} ) { ?>\n\t\t<div><?php echo nl2br( esc_html( \$${snake} ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- nl2br() output of an already-escaped string. ?></div>\n\t<?php } ?>\n"
+          ;;
+        *)
+          markup_lines+="\t<?php if ( \$${snake} ) { ?>\n\t\t<div><?php echo wp_kses_post( wpautop( \$${snake} ) ); ?></div>\n\t<?php } ?>\n"
+          ;;
+      esac
       ;;
     richtext)
       extract_lines+="\$${snake} = \$attributes['${name}'] ?? '';\n"
-      markup_lines+="\t<?php if ( \$${snake} ) : ?>\n\t\t<div><?php echo wp_kses_post( \$${snake} ); ?></div>\n\t<?php endif; ?>\n"
+      markup_lines+="\t<?php if ( \$${snake} ) { ?>\n\t\t<div><?php echo wp_kses_post( \$${snake} ); ?></div>\n\t<?php } ?>\n"
       ;;
     checkbox)
       extract_lines+="\$${snake} = ! empty( \$attributes['${name}'] );\n"
@@ -305,12 +403,17 @@ for i in "${!field_names[@]}"; do
     image)
       extract_lines+="\$${snake}_url = \$attributes['${name}Url'] ?? '';\n"
       extract_lines+="\$${snake}_alt = \$attributes['${name}Alt'] ?? '';\n"
-      markup_lines+="\t<?php if ( \$${snake}_url ) : ?>\n\t\t<img src=\"<?php echo esc_url( \$${snake}_url ); ?>\" alt=\"<?php echo esc_attr( \$${snake}_alt ); ?>\">\n\t<?php endif; ?>\n"
+      markup_lines+="\t<?php if ( \$${snake}_url ) { ?>\n\t\t<img src=\"<?php echo esc_url( \$${snake}_url ); ?>\" alt=\"<?php echo esc_attr( \$${snake}_alt ); ?>\">\n\t<?php } ?>\n"
       ;;
     link)
       extract_lines+="\$${snake}_text = \$attributes['${name}Text'] ?? '';\n"
       extract_lines+="\$${snake}_url = \$attributes['${name}Url'] ?? '';\n"
-      markup_lines+="\t<?php if ( \$${snake}_url ) : ?>\n\t\t<a href=\"<?php echo esc_url( \$${snake}_url ); ?>\"><?php echo esc_html( \$${snake}_text ? \$${snake}_text : \$${snake}_url ); ?></a>\n\t<?php endif; ?>\n"
+      if [ "${field_link_targets[$i]}" = "1" ]; then
+        extract_lines+="\$${snake}_target = ! empty( \$attributes['${name}Target'] );\n"
+        markup_lines+="\t<?php if ( \$${snake}_url ) { ?>\n\t\t<a href=\"<?php echo esc_url( \$${snake}_url ); ?>\"<?php if ( \$${snake}_target ) { ?> target=\"_blank\" rel=\"noopener\"<?php } ?>><?php echo esc_html( \$${snake}_text ? \$${snake}_text : \$${snake}_url ); ?></a>\n\t<?php } ?>\n"
+      else
+        markup_lines+="\t<?php if ( \$${snake}_url ) { ?>\n\t\t<a href=\"<?php echo esc_url( \$${snake}_url ); ?>\"><?php echo esc_html( \$${snake}_text ? \$${snake}_text : \$${snake}_url ); ?></a>\n\t<?php } ?>\n"
+      fi
       ;;
   esac
 done

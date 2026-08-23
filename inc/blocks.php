@@ -53,3 +53,42 @@ add_filter( 'register_block_type_args', 'lc_js_skeleton_core_block_type_args', 1
 function lc_js_skeleton_wrap_block_in_container( $attributes, $content ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 	return '<div class="container">' . $content . '</div>';
 }
+
+/**
+ * Register the category that this theme's own native blocks (blocks/*) are
+ * registered into — see add_block.sh, which scaffolds new blocks with
+ * "category": "{text domain}" so they land here rather than in a core
+ * bucket like "layout".
+ *
+ * Named after the theme itself (text domain as slug, theme Name as title)
+ * rather than a generic "theme" slug — WordPress core already registers a
+ * category with that exact slug for legacy widget blocks, and a project
+ * built from this skeleton may well end up disallowing that whole category
+ * as noise, which would silently hide every block registered under a
+ * colliding "theme" slug too.
+ *
+ * @param array $categories Existing block categories.
+ * @return array
+ */
+function lc_js_skeleton_register_theme_block_category( $categories ) {
+	$theme = wp_get_theme();
+	$slug  = $theme->get( 'TextDomain' );
+
+	foreach ( $categories as $category ) {
+		if ( isset( $category['slug'] ) && $slug === $category['slug'] ) {
+			return $categories;
+		}
+	}
+
+	array_unshift(
+		$categories,
+		array(
+			'slug'  => $slug,
+			'title' => $theme->get( 'Name' ),
+			'icon'  => null,
+		)
+	);
+
+	return $categories;
+}
+add_filter( 'block_categories_all', 'lc_js_skeleton_register_theme_block_category' );
