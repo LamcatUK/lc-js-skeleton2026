@@ -434,6 +434,16 @@ $(printf "%b" "$extract_lines")
 <section <?php echo \$wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() already escapes. ?>>
 $(printf "%b" "$markup_lines")</section>
 EOF
+
+# Concatenating each field's independent "<?php if (...) { ?> ... <?php } ?>"
+# fragment leaves adjacent fields separated only by whitespace — a bare
+# "?>" immediately followed by "<?php" with nothing meaningful between,
+# which is against this project's PHP style. Collapsing those pairs keeps
+# consecutive conditionals in one continuous PHP region instead.
+if command -v perl >/dev/null 2>&1; then
+  perl -0777 -pi -e 's/\?>\s*<\?php/\n/g' "${block_dir}/render.php"
+fi
+
 echo "Created: ${block_dir}/render.php"
 
 echo ""
