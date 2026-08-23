@@ -1,0 +1,91 @@
+{
+  "version": 2,
+  "settings": {
+    "appearanceTools": true,
+    "color": {
+      "defaultPalette": false,
+      "palette": [
+        {
+          "name": "white",
+          "slug": "white",
+          "color": "#ffffff",
+          "origin": "theme"
+        },
+        {
+          "name": "black",
+          "slug": "black",
+          "color": "#000000",
+          "origin": "theme"
+        },
+        {
+          "name": "grey-100",
+          "slug": "grey-100",
+          "color": "#f5f5f5",
+          "origin": "theme"
+        },
+        {
+          "name": "grey-300",
+          "slug": "grey-300",
+          "color": "#d9d9d9",
+          "origin": "theme"
+        },
+        {
+          "name": "grey-700",
+          "slug": "grey-700",
+          "color": "#4a4a4a",
+          "origin": "theme"
+        },
+        {
+          "name": "blue-700",
+          "slug": "blue-700",
+          "color": "#1d4ed8",
+          "origin": "theme"
+        }
+      ]
+    },
+    "typography": {
+      "fontSizes": [
+        {
+          "name": "base",
+          "slug": "base",
+          "size": "1rem"
+        },
+        {
+          "name": "h1",
+          "slug": "h1",
+          "size": "clamp(2rem, 1.6rem + 2vw, 3rem)"
+        },
+        {
+          "name": "h2",
+          "slug": "h2",
+          "size": "clamp(1.6rem, 1.35rem + 1.25vw, 2.25rem)"
+        },
+        {
+          "name": "h3",
+          "slug": "h3",
+          "size": "clamp(1.3rem, 1.15rem + 0.75vw, 1.75rem)"
+        },
+        {
+          "name": "h4",
+          "slug": "h4",
+          "size": "1.25rem"
+        },
+        {
+          "name": "h5",
+          "slug": "h5",
+          "size": "1.1rem"
+        },
+        {
+          "name": "h6",
+          "slug": "h6",
+          "size": "1rem"
+        },
+        {
+          "name": "small",
+          "slug": "small",
+          "size": "0.875rem"
+        }
+      ]
+    }
+  }
+}

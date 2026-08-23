@@ -1,0 +1,22 @@
+/* Optional table styling — not imported by default (see theme.css). Uncomment
+   the @import in theme.css if a project actually needs a styled table. */
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+
+	th,
+	td {
+		padding: var(--space-2);
+		border-bottom: 1px solid var(--col-grey-300);
+		text-align: left;
+	}
+
+	thead th {
+		border-bottom-width: 2px;
+	}
+}
+
+.table-responsive {
+	overflow-x: auto;
+}

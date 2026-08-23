@@ -1,0 +1,55 @@
+/* Minimal, deliberately unopinionated form base — expected to be overridden per project. */
+
+input,
+textarea,
+select,
+button {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+label {
+	display: block;
+	margin-bottom: var(--space-1);
+}
+
+/* Excludes button/checkbox/radio/range/color/file/image input types —
+   they're still <input> elements but this block/border/padding treatment
+   is meant for text-like fields only. Excluding them from the selector
+   entirely (rather than applying the rule then reverting it for those
+   types) means this rule never touches them in the first place — robust
+   regardless of style load order, unlike an "apply then all:revert" pass
+   which can fight with e.g. ACF's own admin CSS for its radio/checkbox UI
+   if that CSS happens to load earlier in the same document. */
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="image"]),
+textarea,
+select {
+	display: block;
+	width: 100%;
+	padding: var(--space-2);
+	border: 1px solid var(--col-grey-300);
+	border-radius: var(--radius-sm);
+	background-color: var(--col-white);
+	color: var(--col-body);
+
+	&:focus-visible {
+		outline: 2px solid var(--col-primary);
+		outline-offset: 1px;
+	}
+}
+
+.btn {
+	display: inline-block;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--col-primary);
+	border-radius: var(--radius-sm);
+	background-color: var(--col-primary);
+	color: var(--col-white);
+	text-decoration: none;
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--col-primary);
+		outline-offset: 2px;
+	}
+}

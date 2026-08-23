@@ -1,0 +1,54 @@
+/*
+ * Accordion — Bootstrap-style class names, zero Bootstrap (same convention
+ * as .container/.row/.btn/.navbar elsewhere in this theme). Built on native
+ * <details>/<summary>, not JS: give sibling .accordion-item elements the
+ * same `name` attribute (e.g. name="cb-faqs-{block_id}") for native
+ * single-open-at-a-time behaviour — modern evergreen browsers only (see
+ * .browserslistrc), no JS file needed. Omit `name` (or give each item a
+ * unique one) if independent multi-open items are wanted instead.
+ */
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+}
+
+.accordion-item {
+  border-bottom: 1px solid var(--col-grey-200);
+}
+
+.accordion-item:first-child {
+  border-top: 1px solid var(--col-grey-200);
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  list-style: none;
+  cursor: pointer;
+  font-weight: var(--fw-700);
+}
+
+.accordion-header::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-icon {
+  flex-shrink: 0;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--transition);
+}
+
+.accordion-item[open] .accordion-icon {
+  transform: rotate(45deg);
+}
+
+.accordion-body {
+  padding-bottom: var(--space-3);
+  color: var(--col-black);
+}

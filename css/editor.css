@@ -1,0 +1,95 @@
+/*
+ * Gutenberg editor-only styles — loaded into the editor iframe via
+ * add_editor_style() (see inc/editor.php), never on the frontend. Built
+ * through the same PostCSS pipeline as theme.css (see src/build/postcss.config.js,
+ * package.json's css-build script) rather than hand-edited in css/ directly —
+ * css/editor.css and css/editor.min.css are both generated output.
+ *
+ * Contains blocks to a page-width column instead of full-bleed, matching
+ * .container's own max-width — a block's own <section class="container">
+ * markup doesn't apply that constraint itself the way .container does on
+ * the frontend, so without this every block stretches edge-to-edge while
+ * editing.
+ *
+ * Deliberately not scoped to .is-root-container > .wp-block: the post
+ * title area isn't a direct child of .is-root-container (it's a sibling
+ * section above it), so that stricter scoping would exclude it.
+ *
+ * var(--container-max-width) here relies on theme.min.css's :root block
+ * already being loaded in the same iframe document — add_editor_style()
+ * is called with theme.min.css listed before this file (see
+ * inc/editor.php) specifically so that holds. If that order ever changes,
+ * this rule silently computes to no max-width at all (an unset custom
+ * property with no fallback makes the whole declaration invalid, not an
+ * error), so don't reorder that array without keeping this in mind.
+ */
+
+.editor-styles-wrapper .wp-block {
+	max-width: var(--container-max-width);
+	margin-inline: auto;
+}
+
+.editor-styles-wrapper .wp-block[data-align="wide"] {
+	max-width: calc(var(--container-max-width) + 4rem);
+}
+
+.editor-styles-wrapper .wp-block[data-align="full"] {
+	max-width: none;
+}
+
+/*
+ * Shared editor-only chrome for native blocks (see add_block.sh /
+ * blocks/{slug}/src/edit.js) — a visible border and consistent padding so
+ * blocks read as distinct units while editing, plus an underlined title
+ * naming which block you're looking at. Editor-only on purpose: a block's
+ * render.php produces unrelated frontend markup and shouldn't carry these
+ * classes.
+ */
+.lc-js-skeleton-editor-block {
+	border: 1px solid #ccc;
+	padding: 2rem;
+}
+
+.lc-js-skeleton-editor-block__title {
+	margin: 0 0 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid #ccc;
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #555;
+}
+
+/*
+ * RichText and MediaUpload don't render their own visible label the way
+ * TextControl/SelectControl/etc. do — .lc-js-skeleton-editor-field supplies
+ * one, plus a border around the control itself so the editable area reads
+ * as a distinct field like the others.
+ *
+ * The label's styling is written out explicitly here rather than reusing
+ * WP core's .components-base-control__label class name: that class exists
+ * in the DOM for hooks/testing, but BaseControl's actual visible styling
+ * (11px, 600 weight, uppercase) is injected by @wordpress/components at
+ * runtime as generated CSS-in-JS classes tied to that specific component
+ * instance — the plain class name alone carries no styling to borrow.
+ */
+.lc-js-skeleton-editor-field {
+	margin-top: 1.5rem;
+	margin-bottom: 1.5rem;
+}
+
+.lc-js-skeleton-editor-field__label {
+	display: block;
+	margin-bottom: 0.5rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.lc-js-skeleton-editor-field__control {
+	border: 1px solid #ccc;
+	padding: 0.75rem;
+}
+
+/*# sourceMappingURL=editor.css.map */

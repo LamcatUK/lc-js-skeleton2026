@@ -1,0 +1,65 @@
+{
+  "name": "lc-js-skeleton2026",
+  "version": "1.0.0",
+  "description": "Standalone base WordPress theme. No parent theme, no Bootstrap — own lightweight CSS reusing Bootstrap-style naming.",
+  "main": "index.js",
+  "scripts": {
+    "bs": "browser-sync start --config src/build/browser-sync.config.js",
+    "css": "npm-run-all css-generate css-build css-minify",
+    "css-generate": "node src/build/generate-utilities.js",
+    "css-build": "postcss src/css/theme.css src/css/editor.css --config src/build/postcss.config.js --dir css --no-map",
+    "css-minify": "cleancss -O1 --format breakWith=lf --with-rebase --source-map --source-map-inline-sources --output css/ --batch --batch-suffix \".min\" \"css/*.css\" \"!css/*.min.css\"",
+    "js": "npm-run-all js-compile js-minify",
+    "js-compile": "rollup --config src/build/rollup.config.js --sourcemap",
+    "js-minify": "terser js/theme.min.js --config-file src/build/terser.config.json --source-map \"content=js/theme.js.map,url=theme.min.js.map,filename=theme.min.js\" --output js/theme.min.js",
+    "watch": "npm-run-all --parallel watch-run-*",
+    "watch-bs": "npm-run-all --parallel bs watch-run-*",
+    "watch-run-css": "nodemon --watch src/css/ --watch src/blocks/ --watch src/build/tokens.config.js --ignore src/css/utilities.css --ignore src/css/blocks.css --ext css,js --exec \"npm run css\"",
+    "watch-run-js": "nodemon --watch src/js/ --ext js --exec \"npm run js\"",
+    "watch-run-theme-json": "nodemon --watch src/css/tokens.css --exec \"npm run generate-theme-json\"",
+    "blocks:build": "wp-scripts build",
+    "blocks:start": "wp-scripts start",
+    "dist": "npm-run-all --parallel css js blocks:build",
+    "generate-theme-json": "node src/build/generate-theme-json.js",
+    "add-block": "bash add_block.sh",
+    "format": "npm-run-all format:*",
+    "format:js": "prettier --write src/js/**/*.js",
+    "format:css": "prettier --write src/css/**/*.css",
+    "format:json": "prettier --write ./**/*.json --ignore-path .prettierignore"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LamcatUK/lc-js-skeleton2026.git"
+  },
+  "keywords": [
+    "wordpress",
+    "theme",
+    "skeleton"
+  ],
+  "author": "LamcatUK",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/LamcatUK/lc-js-skeleton2026",
+  "devDependencies": {
+    "@rollup/plugin-babel": "^6.0.4",
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@wordpress/scripts": "^30.0.0",
+    "autoprefixer": "^10.4.21",
+    "browser-sync": "^3.0.3",
+    "browserslist": "^4.24.4",
+    "clean-css-cli": "^5.6.3",
+    "fast-glob": "^3.3.2",
+    "nodemon": "^3.1.9",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.5.3",
+    "postcss-cli": "^11.0.1",
+    "postcss-import": "^16.1.0",
+    "postcss-nesting": "^13.0.1",
+    "prettier": "^3.5.3",
+    "rollup": "^4.37.0",
+    "terser": "^5.39.0"
+  }
+}

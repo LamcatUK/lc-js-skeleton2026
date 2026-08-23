@@ -1,0 +1,66 @@
+/*
+ * Design tokens — single source of truth for colour/spacing/type values.
+ *
+ * Breakpoints are NOT defined here. CSS custom properties can't be read inside
+ * an @media condition, so breakpoints live in src/build/tokens.config.js instead,
+ * and generate-utilities.js is what turns them into actual responsive CSS. Keep
+ * that file as the only place breakpoint pixel values are written down.
+ */
+
+:root {
+  /* Colour palette — rename/replace per project, keep the slug shape */
+  --col-white: #ffffff;
+  --col-black: #000000;
+  --col-grey-100: #f5f5f5;
+  --col-grey-300: #d9d9d9;
+  --col-grey-700: #4a4a4a;
+  --col-blue-700: #1d4ed8;
+
+  --col-primary: var(--col-blue-700);
+  --col-body: var(--col-black);
+  --col-body-bg: var(--col-white);
+
+  /* Type scale */
+  --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-base: 1rem;
+  --fs-h1: clamp(2rem, 1.6rem + 2vw, 3rem);
+  --fs-h2: clamp(1.6rem, 1.35rem + 1.25vw, 2.25rem);
+  --fs-h3: clamp(1.3rem, 1.15rem + 0.75vw, 1.75rem);
+  --fs-h4: 1.25rem;
+  --fs-h5: 1.1rem;
+  --fs-h6: 1rem;
+  --fs-small: 0.875rem;
+  --fw-400: 400;
+  --fw-600: 600;
+  --fw-700: 700;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.2;
+
+  /* Spacing scale — used by both hand-authored CSS and the utility generator */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 3rem;
+
+  /* Radii / shadows / motion */
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.5rem;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.12);
+  --transition: 150ms ease-in-out;
+
+  /* Layout */
+  --container-max-width: 1320px;
+  --container-padding: var(--space-3);
+  --grid-columns: 12;
+  --grid-gutter: var(--space-3);
+
+  /* Minimum item width for .grid — override per instance with an
+	   inline style (e.g. style="--grid-min: 10rem") rather than adding
+	   a new class per layout. Smaller value = more columns fit. */
+  --grid-min: 16rem;
+
+  --nav-height: 4rem;
+}

@@ -1,0 +1,6 @@
+# Modern evergreen only — see style.css header. No IE11, no legacy fallback layer.
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+not dead

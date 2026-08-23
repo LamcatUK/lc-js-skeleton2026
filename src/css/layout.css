@@ -1,0 +1,67 @@
+/*
+ * Structural grid container rules. The actual `.col-*` / `.col-md-*` span
+ * classes are generated (see src/build/generate-utilities.js) since they're
+ * parameterised across breakpoints — this file just sets up the containers
+ * they live inside.
+ */
+
+.container,
+.container-fluid {
+	width: 100%;
+	margin-inline: auto;
+	padding-inline: var(--container-padding);
+}
+
+.container {
+	max-width: var(--container-max-width);
+}
+
+.row {
+	display: grid;
+	grid-template-columns: repeat(var(--grid-columns), 1fr);
+	gap: var(--grid-gutter);
+}
+
+/* Nested rows use subgrid where supported so tracks line up with the parent
+   row — progressive enhancement only, falls back to its own 12-col grid. */
+@supports (grid-template-columns: subgrid) {
+	.row .row {
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
+	}
+}
+
+.col {
+	grid-column: 1 / -1;
+}
+
+/*
+ * .grid — the two-base-system pairing with .row: .row is a fixed 12-column
+ * grid for deliberate page structure, .grid is auto-fit for "N similar
+ * items" layouts (card grids, feature lists) where you want columns to fit
+ * automatically rather than declaring a fixed count. No breakpoint classes
+ * needed: the browser works out how many columns fit and reflows as the
+ * viewport changes. Tune the minimum item width per instance via the
+ * --grid-min custom property rather than adding a new class, e.g.
+ * style="--grid-min: 10rem".
+ *
+ * Not a replacement for .row/.col-* — that's still the right tool when you
+ * need deliberate, exact spans (page structure). Use this when items just
+ * need to be "roughly N up, however many fit".
+ */
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(var(--grid-min), 1fr));
+	gap: var(--grid-gutter);
+}
+
+/* ACF block "HTML anchor" target — see blocks/*.php, which each output
+   <a id="{anchor}" class="anchor"></a> right before the block's own markup.
+   Positioned up by the fixed header's height (plus a little breathing room)
+   so jumping to the anchor doesn't land content underneath the nav. */
+.anchor {
+	display: block;
+	position: relative;
+	top: calc(-1 * var(--nav-height) - 1rem);
+	visibility: hidden;
+}
