@@ -39,3 +39,31 @@ function lc_js_skeleton_disable_editor_fullscreen_by_default() {
 }
 add_action( 'enqueue_block_editor_assets', 'lc_js_skeleton_disable_editor_fullscreen_by_default' );
 // phpcs:enable
+
+/**
+ * Disable the block inserter's extra Media/Openverse panel.
+ *
+ * This theme keeps the editor pared back and does not use WordPress's stock
+ * remote media suggestions.
+ *
+ * @param array $settings Block editor settings.
+ * @return array
+ */
+function lc_js_skeleton_disable_openverse_media_category( $settings ) {
+	$settings['enableOpenverseMediaCategory'] = false;
+
+	return $settings;
+}
+add_filter( 'block_editor_settings_all', 'lc_js_skeleton_disable_openverse_media_category' );
+
+/**
+ * Remove the block directory upsell from the inserter.
+ *
+ * This keeps clients out of WordPress's install-more-blocks prompt.
+ *
+ * @return void
+ */
+function lc_js_skeleton_disable_block_directory_inserter() {
+	remove_action( 'enqueue_block_editor_assets', 'wp_enqueue_editor_block_directory_assets' );
+}
+add_action( 'after_setup_theme', 'lc_js_skeleton_disable_block_directory_inserter' );

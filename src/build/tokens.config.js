@@ -67,6 +67,14 @@ const utilities = {
 		tokenPrefix: 'fw-',
 		responsive: false,
 	},
+	// Responsive on purpose, unlike stock Bootstrap (where sizing utilities
+	// aren't responsive) — matches this project's existing responsive-by-
+	// default treatment of every other generated utility.
+	width: {
+		className: 'w',
+		prop: 'width',
+		values: { 25: '25%', 50: '50%', 75: '75%', 100: '100%', auto: 'auto' },
+	},
 };
 
 // Spacing utilities (gap, margin, padding) driven off the tokens.css spacing scale.

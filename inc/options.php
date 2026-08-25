@@ -8,6 +8,15 @@
  * of this page is deliberately not ported here — deferred to a future
  * plugin rather than rebuilt as part of dropping ACF.
  *
+ * Includes two field types beyond plain text/email/url inputs — `gallery`
+ * (a fixed multi-image list, e.g. an accreditation badge row) and
+ * `repeater` (genuinely repeating structured rows, e.g. a client-logo
+ * list) — plus a generic tabs pattern once there are enough sections to
+ * make one long scrolling page unwieldy. The example fields below
+ * (`example_gallery`, `example_repeater`) exist to demonstrate both field
+ * types working end to end; rename or replace them with real per-project
+ * fields.
+ *
  * @package lc-js-skeleton2026
  */
 
@@ -53,6 +62,8 @@ function lc_js_skeleton_register_settings_page() {
 	add_settings_section( 'lc_js_skeleton_general', 'General', '__return_false', 'theme-general-settings' );
 	add_settings_section( 'lc_js_skeleton_social', 'Social', '__return_false', 'theme-general-settings' );
 	add_settings_section( 'lc_js_skeleton_tracking', 'Tracking & Verification', '__return_false', 'theme-general-settings' );
+	add_settings_section( 'lc_js_skeleton_gallery', 'Gallery', '__return_false', 'theme-general-settings' );
+	add_settings_section( 'lc_js_skeleton_repeater', 'Repeater', '__return_false', 'theme-general-settings' );
 
 	$fields = array(
 		'email'                     => array(
@@ -105,6 +116,28 @@ function lc_js_skeleton_register_settings_page() {
 			'section'     => 'lc_js_skeleton_tracking',
 			'description' => 'Content value of the msvalidate.01 meta tag.',
 		),
+		'example_gallery'           => array(
+			'label'       => 'Example Gallery',
+			'type'        => 'gallery',
+			'section'     => 'lc_js_skeleton_gallery',
+			'description' => 'A fixed multi-image list — e.g. accreditation badges, a logo strip. Read with lc_js_skeleton_get_repeater_setting-style helper of your own, mirroring lc_js_skeleton_get_footer_accreditation_ids() in the cb-hts-js-2026 sibling theme.',
+		),
+		'example_repeater'          => array(
+			'label'       => 'Example Repeater',
+			'type'        => 'repeater',
+			'section'     => 'lc_js_skeleton_repeater',
+			'sub_fields'  => array(
+				'name' => array(
+					'label' => 'Name',
+					'type'  => 'text',
+				),
+				'logo' => array(
+					'label' => 'Logo',
+					'type'  => 'image',
+				),
+			),
+			'description' => 'Genuinely repeating structured rows — e.g. a client-logo list. Read with lc_js_skeleton_get_repeater_setting( \'example_repeater\' ).',
+		),
 	);
 
 	foreach ( $fields as $key => $field ) {
@@ -121,12 +154,75 @@ function lc_js_skeleton_register_settings_page() {
 add_action( 'admin_menu', 'lc_js_skeleton_register_settings_page' );
 
 /**
- * Render a single text/email/url settings field.
+ * Read a `repeater`-type setting as an array of row arrays.
+ *
+ * WordPress's Settings API stores whatever nested array structure the form
+ * posts (no sanitize_callback is registered — see register_setting() above),
+ * so rows survive as-is; this just guards the case where the key was never
+ * set at all.
+ *
+ * @param string $key Setting key, e.g. 'example_repeater'.
+ * @return array[]
+ */
+function lc_js_skeleton_get_repeater_setting( $key ) {
+	$rows = lc_js_skeleton_get_setting( $key, array() );
+	return is_array( $rows ) ? $rows : array();
+}
+
+/**
+ * Enqueue the media modal and settings-page admin scripts, settings page only.
+ *
+ * @param string $hook_suffix Current admin page hook.
+ * @return void
+ */
+function lc_js_skeleton_settings_page_assets( $hook_suffix ) {
+	if ( 'toplevel_page_theme-general-settings' !== $hook_suffix ) {
+		return;
+	}
+
+	wp_enqueue_media();
+	wp_enqueue_script(
+		'lc-js-skeleton-gallery-field',
+		get_stylesheet_directory_uri() . '/js/gallery-field.js',
+		array( 'jquery' ),
+		wp_get_theme()->get( 'Version' ),
+		true
+	);
+	wp_enqueue_script(
+		'lc-js-skeleton-settings-repeater',
+		get_stylesheet_directory_uri() . '/js/repeater-field.js',
+		array( 'jquery' ),
+		wp_get_theme()->get( 'Version' ),
+		true
+	);
+	wp_enqueue_script(
+		'lc-js-skeleton-tabs',
+		get_stylesheet_directory_uri() . '/js/tabs.js',
+		array(),
+		wp_get_theme()->get( 'Version' ),
+		true
+	);
+}
+add_action( 'admin_enqueue_scripts', 'lc_js_skeleton_settings_page_assets' );
+
+/**
+ * Render a single settings field — text/email/url input, a gallery picker,
+ * or a generic repeater.
  *
  * @param array $args Field args: key, type, placeholder, description.
  * @return void
  */
 function lc_js_skeleton_render_settings_field( $args ) {
+	if ( 'gallery' === $args['type'] ) {
+		lc_js_skeleton_render_gallery_field( $args );
+		return;
+	}
+
+	if ( 'repeater' === $args['type'] ) {
+		lc_js_skeleton_render_repeater_field( $args );
+		return;
+	}
+
 	$value = lc_js_skeleton_get_setting( $args['key'] );
 	?>
 	<input
@@ -137,27 +233,256 @@ function lc_js_skeleton_render_settings_field( $args ) {
 		placeholder="<?php echo esc_attr( $args['placeholder'] ?? '' ); ?>"
 		class="regular-text"
 	>
-	<?php if ( ! empty( $args['description'] ) ) : ?>
-		<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
-	<?php endif; ?>
 	<?php
+	if ( ! empty( $args['description'] ) ) {
+		?>
+		<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
+		<?php
+	}
 }
 
 /**
- * Settings page HTML.
+ * Render a `gallery`-type field — a hidden CSV-of-IDs input plus a
+ * thumbnail strip, driven by the core media modal in multi-select mode.
+ * Selection order is preserved as the display order; there's no drag
+ * reordering, since re-opening the picker and re-selecting in the wanted
+ * order covers it without extra JS.
+ *
+ * @param array $args Field args: key, description.
+ * @return void
+ */
+function lc_js_skeleton_render_gallery_field( $args ) {
+	$ids = array_filter( array_map( 'absint', explode( ',', lc_js_skeleton_get_setting( $args['key'] ) ) ) );
+	?>
+	<div class="lc-js-skeleton-gallery-field">
+		<input
+			type="hidden"
+			id="<?php echo esc_attr( $args['key'] ); ?>"
+			name="<?php echo esc_attr( LC_JS_SKELETON_SETTINGS_OPTION ); ?>[<?php echo esc_attr( $args['key'] ); ?>]"
+			value="<?php echo esc_attr( implode( ',', $ids ) ); ?>"
+		>
+		<ul class="lc-js-skeleton-gallery-field__preview" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 8px; list-style: none;">
+			<?php
+			foreach ( $ids as $id ) {
+				$thumb = wp_get_attachment_image_src( $id, 'thumbnail' );
+				if ( ! $thumb ) {
+					continue;
+				}
+				?>
+				<li><img src="<?php echo esc_url( $thumb[0] ); ?>" alt="" style="width: 80px; height: 80px; object-fit: contain; background: #fff; border: 1px solid #ccc;"></li>
+				<?php
+			}
+			?>
+		</ul>
+		<p>
+			<button type="button" class="button lc-js-skeleton-gallery-field__select">Select Images</button>
+			<button type="button" class="button lc-js-skeleton-gallery-field__clear">Clear</button>
+		</p>
+	</div>
+	<?php
+	if ( ! empty( $args['description'] ) ) {
+		?>
+		<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
+		<?php
+	}
+}
+
+/**
+ * Render a generic repeater field — rows of declaratively-configured
+ * sub-fields (text or image), driven by js/repeater-field.js for add/
+ * remove/reorder and per-row image selection.
+ *
+ * Row indexes in submitted field names don't need to be sequential — the
+ * Settings API stores whatever nested array PHP builds from the posted
+ * field names, and PHP preserves array insertion (= form field submission
+ * = DOM) order regardless of the actual key values, so JS reordering rows
+ * in the DOM is enough; nothing needs renumbering.
+ *
+ * @param array $args Field args: key, sub_fields, description.
+ * @return void
+ */
+function lc_js_skeleton_render_repeater_field( $args ) {
+	$key        = $args['key'];
+	$sub_fields = $args['sub_fields'];
+	$rows       = lc_js_skeleton_get_repeater_setting( $key );
+	?>
+	<div class="lc-js-skeleton-settings-repeater" data-repeater-key="<?php echo esc_attr( $key ); ?>">
+		<div style="display: flex; align-items: center; gap: 12px; padding: 0 12px; margin-bottom: 4px;">
+			<span style="flex: none; width: 22px;"></span>
+			<?php
+			foreach ( $sub_fields as $sub_field ) {
+				$width = 'image' === $sub_field['type'] ? 'flex: none; width: 64px;' : 'flex: 1 1 0%; min-width: 0;';
+				?>
+			<span style="<?php echo esc_attr( $width ); ?> font-size: 12px; font-weight: 600; color: #1d2327;"><?php echo esc_html( $sub_field['label'] ); ?></span>
+				<?php
+			}
+			?>
+			<span style="flex: none; width: 92px;"></span>
+		</div>
+		<div class="lc-js-skeleton-settings-repeater__rows">
+			<?php
+			$number = 0;
+			foreach ( $rows as $index => $row ) {
+				++$number;
+				echo lc_js_skeleton_render_repeater_row( $key, $index, $sub_fields, $row, $number ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped internally.
+			}
+			?>
+		</div>
+		<template class="lc-js-skeleton-settings-repeater__template">
+			<?php echo lc_js_skeleton_render_repeater_row( $key, '__INDEX__', $sub_fields, array(), 0 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped internally. ?>
+		</template>
+		<p>
+			<button type="button" class="button button-primary lc-js-skeleton-settings-repeater__add-row">Add row</button>
+		</p>
+	</div>
+	<?php
+	if ( ! empty( $args['description'] ) ) {
+		?>
+		<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
+		<?php
+	}
+}
+
+/**
+ * Render one repeater row's markup. Shared between already-saved rows and
+ * the empty `<template>` row js/repeater-field.js clones for "Add row".
+ *
+ * @param string     $key        Repeater setting key.
+ * @param int|string $index      Row index, or the literal '__INDEX__' placeholder.
+ * @param array      $sub_fields Sub-field config: [ name => [ label, type ] ].
+ * @param array      $row        Existing row values, keyed by sub-field name.
+ * @param int        $number     1-based display position — purely visual, unrelated
+ *                                to $index; js/repeater-field.js keeps it in sync
+ *                                with DOM order after any add/remove/move.
+ * @return string
+ */
+function lc_js_skeleton_render_repeater_row( $key, $index, $sub_fields, $row, $number ) {
+	ob_start();
+	?>
+	<div class="lc-js-skeleton-settings-repeater__row" style="display: flex; align-items: flex-end; gap: 12px; border: 1px solid #ccc; padding: 12px; margin-bottom: 8px;">
+		<span
+			class="lc-js-skeleton-settings-repeater__number"
+			style="flex: none; align-self: center; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #f0f0f1; font-size: 12px; font-weight: 600; color: #50575e;"
+		><?php echo (int) $number; ?></span>
+		<?php
+		foreach ( $sub_fields as $sub_key => $sub_field ) {
+			$name  = sprintf( '%s[%s][%s][%s]', LC_JS_SKELETON_SETTINGS_OPTION, $key, $index, $sub_key );
+			$value = $row[ $sub_key ] ?? '';
+
+			if ( 'image' === $sub_field['type'] ) {
+				$thumb = $value ? wp_get_attachment_image_src( absint( $value ), 'thumbnail' ) : false;
+				?>
+			<div
+				class="lc-js-skeleton-settings-repeater__image"
+				style="flex: none; position: relative; width: 64px; height: 64px; background: #fff; border: 1px solid #ccc;"
+			>
+				<img
+					src="<?php echo $thumb ? esc_url( $thumb[0] ) : ''; ?>"
+					alt=""
+					style="width: 100%; height: 100%; object-fit: contain; display: <?php echo $thumb ? 'block' : 'none'; ?>;"
+				>
+				<input
+					type="hidden"
+					class="lc-js-skeleton-settings-repeater__image-input"
+					name="<?php echo esc_attr( $name ); ?>"
+					value="<?php echo esc_attr( $value ); ?>"
+				>
+				<div style="position: absolute; inset: auto 0 0 0; display: flex; background: rgba(0, 0, 0, 0.6);">
+					<button
+						type="button"
+						class="lc-js-skeleton-settings-repeater__select-image"
+						data-select-label="Select <?php echo esc_attr( $sub_field['label'] ); ?>"
+						title="<?php echo esc_attr( ( $thumb ? 'Replace ' : 'Select ' ) . $sub_field['label'] ); ?>"
+						style="flex: 1; background: none; border: none; color: #fff; cursor: pointer; padding: 2px 0; font-size: 11px; line-height: 1;"
+					>&#9998;</button>
+					<button
+						type="button"
+						class="lc-js-skeleton-settings-repeater__clear-image"
+						title="Clear"
+						style="flex: 1; background: none; border: none; color: #fff; cursor: pointer; padding: 2px 0; font-size: 13px; line-height: 1; <?php echo $thumb ? '' : 'display: none;'; ?>"
+					>&times;</button>
+				</div>
+			</div>
+				<?php
+			} else {
+				?>
+			<input
+				type="text"
+				class="regular-text"
+				style="flex: 1 1 0%; min-width: 0; width: 100%;"
+				aria-label="<?php echo esc_attr( $sub_field['label'] ); ?>"
+				name="<?php echo esc_attr( $name ); ?>"
+				value="<?php echo esc_attr( $value ); ?>"
+			>
+				<?php
+			}
+		}
+		?>
+		<div class="lc-js-skeleton-settings-repeater__row-actions" style="flex: none; display: flex; gap: 4px;">
+			<button type="button" class="button lc-js-skeleton-settings-repeater__move-up" title="Move up">&#9650;</button>
+			<button type="button" class="button lc-js-skeleton-settings-repeater__move-down" title="Move down">&#9660;</button>
+			<button type="button" class="button lc-js-skeleton-settings-repeater__remove-row" title="Remove">&times;</button>
+		</div>
+	</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
+ * Settings page HTML — one tab per registered section, using
+ * js/tabs.js's generic [data-tabs] contract (see that file's docblock)
+ * rather than anything Settings-API-specific, so the same markup pattern
+ * can be reused wherever tabs are next needed, including a future
+ * block-editor equivalent.
+ *
+ * Replaces do_settings_sections() with a manual per-section loop — that
+ * function always renders every section for a page in one continuous flow,
+ * with no way to render one section at a time into its own tab panel.
  *
  * @return void
  */
 function lc_js_skeleton_render_settings_page() {
+	global $wp_settings_sections;
+
+	$sections = $wp_settings_sections['theme-general-settings'] ?? array();
 	?>
 	<div class="wrap">
 		<h1>Site-Wide Settings</h1>
 		<form action="options.php" method="post">
-			<?php
-			settings_fields( 'lc_js_skeleton_settings' );
-			do_settings_sections( 'theme-general-settings' );
-			submit_button();
-			?>
+			<?php settings_fields( 'lc_js_skeleton_settings' ); ?>
+			<div class="lc-js-skeleton-tabs" data-tabs>
+				<h2 class="nav-tab-wrapper" data-tabs-nav>
+					<?php
+					$is_first = true;
+					foreach ( $sections as $section_id => $section ) {
+						$class = 'nav-tab' . ( $is_first ? ' nav-tab-active' : '' );
+						?>
+					<a href="#" class="<?php echo esc_attr( $class ); ?>" data-tabs-target="<?php echo esc_attr( $section_id ); ?>"><?php echo esc_html( $section['title'] ); ?></a>
+						<?php
+						$is_first = false;
+					}
+					?>
+				</h2>
+				<?php
+				$is_first = true;
+				foreach ( $sections as $section_id => $section ) {
+					?>
+				<div class="lc-js-skeleton-tabs__panel" data-tabs-panel="<?php echo esc_attr( $section_id ); ?>" style="padding-top: 20px;" <?php echo $is_first ? '' : 'hidden'; ?>>
+					<?php
+					if ( is_callable( $section['callback'] ) ) {
+						call_user_func( $section['callback'], $section );
+					}
+					?>
+					<table class="form-table" role="presentation">
+						<?php do_settings_fields( 'theme-general-settings', $section_id ); ?>
+					</table>
+				</div>
+					<?php
+					$is_first = false;
+				}
+				?>
+			</div>
+			<?php submit_button(); ?>
 		</form>
 	</div>
 	<?php

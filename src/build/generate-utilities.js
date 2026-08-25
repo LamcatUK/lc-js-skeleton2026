@@ -78,6 +78,18 @@ function generateUtilities() {
 		}
 	}
 
+	// offset-{n} / offset-{bp}-{n} — push a column start via margin, the same
+	// technique Bootstrap uses (works the same on a grid item as a flex one).
+	// n goes to gridColumns - 1: offsetting by the full column count would
+	// push a column past the end of its own row.
+	for (const bp of Object.keys(breakpoints)) {
+		for (let n = 1; n < gridColumns; n++) {
+			const className = bp ? `offset-${bp}-${n}` : `offset-${n}`;
+			const percent = (n / gridColumns) * 100;
+			rulesByBreakpoint[bp].push(`.${className} { margin-inline-start: ${percent}%; }`);
+		}
+	}
+
 	// margin / padding — responsive, same per-breakpoint pattern as gap-*/col-*
 	// s/e (start/end) are physical, not logical — left/right, matching this
 	// file's existing text-align start/end convention above, not RTL-aware
