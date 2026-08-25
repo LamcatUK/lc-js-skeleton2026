@@ -23,6 +23,11 @@
 .fw-400 { font-weight: var(--fw-400); }
 .fw-600 { font-weight: var(--fw-600); }
 .fw-700 { font-weight: var(--fw-700); }
+.w-25 { width: 25%; }
+.w-50 { width: 50%; }
+.w-75 { width: 75%; }
+.w-100 { width: 100%; }
+.w-auto { width: auto; }
 .gap-0 { gap: var(--space-0); }
 .gap-1 { gap: var(--space-1); }
 .gap-2 { gap: var(--space-2); }
@@ -41,6 +46,17 @@
 .col-10 { grid-column: span 10; }
 .col-11 { grid-column: span 11; }
 .col-12 { grid-column: span 12; }
+.offset-1 { margin-inline-start: 8.333333333333332%; }
+.offset-2 { margin-inline-start: 16.666666666666664%; }
+.offset-3 { margin-inline-start: 25%; }
+.offset-4 { margin-inline-start: 33.33333333333333%; }
+.offset-5 { margin-inline-start: 41.66666666666667%; }
+.offset-6 { margin-inline-start: 50%; }
+.offset-7 { margin-inline-start: 58.333333333333336%; }
+.offset-8 { margin-inline-start: 66.66666666666666%; }
+.offset-9 { margin-inline-start: 75%; }
+.offset-10 { margin-inline-start: 83.33333333333334%; }
+.offset-11 { margin-inline-start: 91.66666666666666%; }
 .m-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 .p-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 .mt-0 { margin-top: var(--space-0); }
@@ -151,6 +167,11 @@
 	.text-sm-start { text-align: left; }
 	.text-sm-center { text-align: center; }
 	.text-sm-end { text-align: right; }
+	.w-sm-25 { width: 25%; }
+	.w-sm-50 { width: 50%; }
+	.w-sm-75 { width: 75%; }
+	.w-sm-100 { width: 100%; }
+	.w-sm-auto { width: auto; }
 	.gap-sm-0 { gap: var(--space-0); }
 	.gap-sm-1 { gap: var(--space-1); }
 	.gap-sm-2 { gap: var(--space-2); }
@@ -169,6 +190,17 @@
 	.col-sm-10 { grid-column: span 10; }
 	.col-sm-11 { grid-column: span 11; }
 	.col-sm-12 { grid-column: span 12; }
+	.offset-sm-1 { margin-inline-start: 8.333333333333332%; }
+	.offset-sm-2 { margin-inline-start: 16.666666666666664%; }
+	.offset-sm-3 { margin-inline-start: 25%; }
+	.offset-sm-4 { margin-inline-start: 33.33333333333333%; }
+	.offset-sm-5 { margin-inline-start: 41.66666666666667%; }
+	.offset-sm-6 { margin-inline-start: 50%; }
+	.offset-sm-7 { margin-inline-start: 58.333333333333336%; }
+	.offset-sm-8 { margin-inline-start: 66.66666666666666%; }
+	.offset-sm-9 { margin-inline-start: 75%; }
+	.offset-sm-10 { margin-inline-start: 83.33333333333334%; }
+	.offset-sm-11 { margin-inline-start: 91.66666666666666%; }
 	.m-sm-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-sm-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-sm-0 { margin-top: var(--space-0); }
@@ -280,6 +312,11 @@
 	.text-md-start { text-align: left; }
 	.text-md-center { text-align: center; }
 	.text-md-end { text-align: right; }
+	.w-md-25 { width: 25%; }
+	.w-md-50 { width: 50%; }
+	.w-md-75 { width: 75%; }
+	.w-md-100 { width: 100%; }
+	.w-md-auto { width: auto; }
 	.gap-md-0 { gap: var(--space-0); }
 	.gap-md-1 { gap: var(--space-1); }
 	.gap-md-2 { gap: var(--space-2); }
@@ -298,6 +335,17 @@
 	.col-md-10 { grid-column: span 10; }
 	.col-md-11 { grid-column: span 11; }
 	.col-md-12 { grid-column: span 12; }
+	.offset-md-1 { margin-inline-start: 8.333333333333332%; }
+	.offset-md-2 { margin-inline-start: 16.666666666666664%; }
+	.offset-md-3 { margin-inline-start: 25%; }
+	.offset-md-4 { margin-inline-start: 33.33333333333333%; }
+	.offset-md-5 { margin-inline-start: 41.66666666666667%; }
+	.offset-md-6 { margin-inline-start: 50%; }
+	.offset-md-7 { margin-inline-start: 58.333333333333336%; }
+	.offset-md-8 { margin-inline-start: 66.66666666666666%; }
+	.offset-md-9 { margin-inline-start: 75%; }
+	.offset-md-10 { margin-inline-start: 83.33333333333334%; }
+	.offset-md-11 { margin-inline-start: 91.66666666666666%; }
 	.m-md-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-md-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-md-0 { margin-top: var(--space-0); }
@@ -409,6 +457,11 @@
 	.text-lg-start { text-align: left; }
 	.text-lg-center { text-align: center; }
 	.text-lg-end { text-align: right; }
+	.w-lg-25 { width: 25%; }
+	.w-lg-50 { width: 50%; }
+	.w-lg-75 { width: 75%; }
+	.w-lg-100 { width: 100%; }
+	.w-lg-auto { width: auto; }
 	.gap-lg-0 { gap: var(--space-0); }
 	.gap-lg-1 { gap: var(--space-1); }
 	.gap-lg-2 { gap: var(--space-2); }
@@ -427,6 +480,17 @@
 	.col-lg-10 { grid-column: span 10; }
 	.col-lg-11 { grid-column: span 11; }
 	.col-lg-12 { grid-column: span 12; }
+	.offset-lg-1 { margin-inline-start: 8.333333333333332%; }
+	.offset-lg-2 { margin-inline-start: 16.666666666666664%; }
+	.offset-lg-3 { margin-inline-start: 25%; }
+	.offset-lg-4 { margin-inline-start: 33.33333333333333%; }
+	.offset-lg-5 { margin-inline-start: 41.66666666666667%; }
+	.offset-lg-6 { margin-inline-start: 50%; }
+	.offset-lg-7 { margin-inline-start: 58.333333333333336%; }
+	.offset-lg-8 { margin-inline-start: 66.66666666666666%; }
+	.offset-lg-9 { margin-inline-start: 75%; }
+	.offset-lg-10 { margin-inline-start: 83.33333333333334%; }
+	.offset-lg-11 { margin-inline-start: 91.66666666666666%; }
 	.m-lg-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-lg-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-lg-0 { margin-top: var(--space-0); }
@@ -538,6 +602,11 @@
 	.text-xl-start { text-align: left; }
 	.text-xl-center { text-align: center; }
 	.text-xl-end { text-align: right; }
+	.w-xl-25 { width: 25%; }
+	.w-xl-50 { width: 50%; }
+	.w-xl-75 { width: 75%; }
+	.w-xl-100 { width: 100%; }
+	.w-xl-auto { width: auto; }
 	.gap-xl-0 { gap: var(--space-0); }
 	.gap-xl-1 { gap: var(--space-1); }
 	.gap-xl-2 { gap: var(--space-2); }
@@ -556,6 +625,17 @@
 	.col-xl-10 { grid-column: span 10; }
 	.col-xl-11 { grid-column: span 11; }
 	.col-xl-12 { grid-column: span 12; }
+	.offset-xl-1 { margin-inline-start: 8.333333333333332%; }
+	.offset-xl-2 { margin-inline-start: 16.666666666666664%; }
+	.offset-xl-3 { margin-inline-start: 25%; }
+	.offset-xl-4 { margin-inline-start: 33.33333333333333%; }
+	.offset-xl-5 { margin-inline-start: 41.66666666666667%; }
+	.offset-xl-6 { margin-inline-start: 50%; }
+	.offset-xl-7 { margin-inline-start: 58.333333333333336%; }
+	.offset-xl-8 { margin-inline-start: 66.66666666666666%; }
+	.offset-xl-9 { margin-inline-start: 75%; }
+	.offset-xl-10 { margin-inline-start: 83.33333333333334%; }
+	.offset-xl-11 { margin-inline-start: 91.66666666666666%; }
 	.m-xl-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-xl-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-xl-0 { margin-top: var(--space-0); }
@@ -667,6 +747,11 @@
 	.text-xxl-start { text-align: left; }
 	.text-xxl-center { text-align: center; }
 	.text-xxl-end { text-align: right; }
+	.w-xxl-25 { width: 25%; }
+	.w-xxl-50 { width: 50%; }
+	.w-xxl-75 { width: 75%; }
+	.w-xxl-100 { width: 100%; }
+	.w-xxl-auto { width: auto; }
 	.gap-xxl-0 { gap: var(--space-0); }
 	.gap-xxl-1 { gap: var(--space-1); }
 	.gap-xxl-2 { gap: var(--space-2); }
@@ -685,6 +770,17 @@
 	.col-xxl-10 { grid-column: span 10; }
 	.col-xxl-11 { grid-column: span 11; }
 	.col-xxl-12 { grid-column: span 12; }
+	.offset-xxl-1 { margin-inline-start: 8.333333333333332%; }
+	.offset-xxl-2 { margin-inline-start: 16.666666666666664%; }
+	.offset-xxl-3 { margin-inline-start: 25%; }
+	.offset-xxl-4 { margin-inline-start: 33.33333333333333%; }
+	.offset-xxl-5 { margin-inline-start: 41.66666666666667%; }
+	.offset-xxl-6 { margin-inline-start: 50%; }
+	.offset-xxl-7 { margin-inline-start: 58.333333333333336%; }
+	.offset-xxl-8 { margin-inline-start: 66.66666666666666%; }
+	.offset-xxl-9 { margin-inline-start: 75%; }
+	.offset-xxl-10 { margin-inline-start: 83.33333333333334%; }
+	.offset-xxl-11 { margin-inline-start: 91.66666666666666%; }
 	.m-xxl-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-xxl-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-xxl-0 { margin-top: var(--space-0); }
