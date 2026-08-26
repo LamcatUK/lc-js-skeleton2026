@@ -1,6 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
-import { TextControl, TextareaControl, Button } from '@wordpress/components';
+import { TextControl, TextareaControl, ToggleControl, Button } from '@wordpress/components';
 
 /**
  * Generic repeater UI for a block attribute holding an array of row objects.
@@ -9,20 +9,31 @@ import { TextControl, TextareaControl, Button } from '@wordpress/components';
  * implementation since one runs in wp-admin and the other inside the block
  * editor's React tree.
  *
- * Rows lay out inline: each sub-field takes an equal-width slot, with
- * compact move-up/move-down/remove icon buttons at the row's end. Sub-field
- * labels render once, as column headers above the rows, rather than
- * repeating per row — `hideLabelFromVision` keeps them screen-reader
- * accessible on each control without rendering visually twice.
+ * Rows lay out inline by default (`layout: 'row'`): each sub-field takes an
+ * equal-width slot, with compact move-up/move-down/remove icon buttons at
+ * the row's end. Sub-field labels render once, as column headers above the
+ * rows, rather than repeating per row — `hideLabelFromVision` keeps them
+ * screen-reader accessible on each control without rendering visually
+ * twice.
+ *
+ * `layout: 'column'` stacks each row's sub-fields vertically instead —
+ * there's no shared column header in that layout (it wouldn't line up with
+ * anything), so each sub-field's own label renders visibly above its
+ * control instead of being screen-reader-only.
  *
  * @param {Object}   props
  * @param {string}   props.label    Field group label.
  * @param {Object[]} props.value    Current rows.
  * @param {Function} props.onChange ( rows ) => void
- * @param {Object[]} props.fields   [ { name, label, type: 'text'|'textarea'|'image'|'file', help, mimeTypes } ]
+ * @param {Object[]} props.fields   [ { name, label, type: 'text'|'textarea'|'image'|'file'|'link', help, mimeTypes, linkTarget } ]
+ *                                  `linkTarget` (link fields only) adds an "open in new tab" toggle,
+ *                                  storing `{name}Target` on the row — same opt-in shape as the
+ *                                  top-level `link` field type's `link_target` option.
  * @param {Object}   props.emptyRow Shape of a freshly-added row, e.g. { stat: '', title: '' }.
+ * @param {string}   [props.layout] 'row' (default) or 'column'.
  */
-export default function RepeaterField( { label, value, onChange, fields, emptyRow } ) {
+export default function RepeaterField( { label, value, onChange, fields, emptyRow, layout = 'row' } ) {
+	const isColumn = 'column' === layout;
 	const rows = value || [];
 
 	function updateRow( index, patch ) {
@@ -52,9 +63,15 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 	}
 
 	return (
-		<div className="lc-js-skeleton-repeater-field">
+		<div
+			className={
+				isColumn
+					? 'lc-js-skeleton-repeater-field lc-js-skeleton-repeater-field--column'
+					: 'lc-js-skeleton-repeater-field'
+			}
+		>
 			<label className="lc-js-skeleton-editor-field__label">{ label }</label>
-			{ rows.length > 0 && (
+			{ ! isColumn && rows.length > 0 && (
 				<div className="lc-js-skeleton-repeater-field__header">
 					<span className="lc-js-skeleton-repeater-field__number-spacer" />
 					{ fields.map( ( field ) => (
@@ -105,6 +122,34 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 							);
 						}
 
+						if ( 'link' === field.type ) {
+							return (
+								<div className="lc-js-skeleton-repeater-field__link" key={ field.name }>
+									<TextControl
+										label={ __( `${ field.label } Title`, 'lc-js-skeleton2026' ) }
+										hideLabelFromVision={ ! isColumn }
+										value={ row[ `${ field.name }Text` ] || '' }
+										onChange={ ( v ) => updateRow( index, { [ `${ field.name }Text` ]: v } ) }
+									/>
+									<TextControl
+										type="url"
+										label={ __( `${ field.label } URL`, 'lc-js-skeleton2026' ) }
+										hideLabelFromVision={ ! isColumn }
+										value={ row[ field.name ] || '' }
+										onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
+										help={ field.help }
+									/>
+									{ field.linkTarget && (
+										<ToggleControl
+											label={ __( `Open ${ field.label } in a new tab`, 'lc-js-skeleton2026' ) }
+											checked={ !! row[ `${ field.name }Target` ] }
+											onChange={ ( v ) => updateRow( index, { [ `${ field.name }Target` ]: v } ) }
+										/>
+									) }
+								</div>
+							);
+						}
+
 						if ( 'file' === field.type ) {
 							return (
 								<MediaUploadCheck key={ field.name }>
@@ -141,7 +186,7 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 								<TextareaControl
 									key={ field.name }
 									label={ field.label }
-									hideLabelFromVision
+									hideLabelFromVision={ ! isColumn }
 									value={ row[ field.name ] || '' }
 									onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
 									help={ field.help }
@@ -153,7 +198,7 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 							<TextControl
 								key={ field.name }
 								label={ field.label }
-								hideLabelFromVision
+								hideLabelFromVision={ ! isColumn }
 								value={ row[ field.name ] || '' }
 								onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
 								help={ field.help }

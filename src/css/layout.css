@@ -16,6 +16,25 @@
 	max-width: var(--container-max-width);
 }
 
+.wp-block-columns:not(.alignfull):not(.alignwide) {
+	width: 100%;
+	margin-inline: auto;
+	padding-inline: var(--container-padding);
+	max-width: var(--container-max-width);
+}
+
+/*
+ * A wrapped core block (see lc_js_skeleton_wrap_block_in_container() in
+ * inc/blocks.php) nested inside a Columns block would otherwise get its own
+ * .container padding on top of the column's — double-inset relative to an
+ * unwrapped sibling (e.g. core/image) in the same column. Reset it to 0 in
+ * both nesting cases.
+ */
+.container .container,
+.wp-block-column .container {
+	padding-inline: 0;
+}
+
 .row {
 	display: grid;
 	grid-template-columns: repeat(var(--grid-columns), 1fr);

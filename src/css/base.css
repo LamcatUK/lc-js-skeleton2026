@@ -56,11 +56,17 @@ p {
 
 a {
 	color: var(--col-primary);
-	text-decoration-thickness: 1px;
+	text-decoration: none;
+}
 
-	&:hover {
-		text-decoration-thickness: 2px;
-	}
+/*
+ * Underline-on-hover only for plain content links (no class) — cards,
+ * buttons, nav items, and social/icon links all carry their own class and
+ * define their own hover treatment, so they're excluded here rather than
+ * needing a `text-decoration: none` override per component.
+ */
+a:not([class]):hover {
+	text-decoration: underline;
 }
 
 img,
@@ -69,6 +75,20 @@ video {
 	max-width: 100%;
 	height: auto;
 	display: block;
+}
+
+/*
+ * Bootstrap-derived project themes get this from `.figure-caption` — this
+ * skeleton has no Bootstrap to extend, so it's a plain reset instead.
+ * `color` is Bootstrap's own $gray-600 default, not one of this project's
+ * tokens (deliberately a literal, not a token, since a project's own
+ * --col-muted-equivalent value will vary).
+ */
+figcaption {
+	margin-top: 0.5em;
+	font-size: 0.875rem;
+	line-height: var(--line-height-base);
+	color: #6c757d;
 }
 
 ul,
