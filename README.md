@@ -114,8 +114,16 @@ No registration step — `inc/blocks.php` auto-loads every `blocks/*/block.json`
 it finds. Run `npm run blocks:build` after scaffolding, or the block won't
 render correctly until `build/index.js` exists.
 
-Not yet supported by the generator: repeater, gallery, relationship,
-post_object, file — add those by hand in `src/edit.js` if a block needs one.
+Not yet supported by `add_block.sh` directly: repeater, gallery,
+relationship, post_object, file. Repeater and single-post fields have a
+documented drop-in pattern instead — `blocks/_shared/RepeaterField.js` and
+`blocks/_shared/PostTypePicker.js` (see the `blocks/_shared/` entry under
+`CLAUDE.md`'s "File layout" for how to wire one into a generated `edit.js`
+by hand). Relationship (a whole grid of posts via `WP_Query`) still has no
+drop-in — build it by hand. The
+**LCP Block Builder** plugin (`LamcatUK/lcp-block-builder`, wp-admin GUI,
+local-only) covers repeater/gallery/post_type generation that `add_block.sh`
+doesn't, if it's active on this environment.
 
 If the block needs custom styles, add `src/blocks/{block-slug}.css`; it's
 picked up automatically on the next `npm run css`, no registration step.
