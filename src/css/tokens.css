@@ -33,6 +33,14 @@
   --fw-400: 400;
   --fw-600: 600;
   --fw-700: 700;
+
+  /* Semantic aliases — generate-utilities.js emits a matching .fw-* class
+	   for every custom property here, so these are free utility classes too
+	   (.fw-normal, .fw-semibold, .fw-bold), not just tokens for use in CSS. */
+  --fw-normal: var(--fw-400);
+  --fw-semibold: var(--fw-600);
+  --fw-bold: var(--fw-700);
+
   --line-height-base: 1.5;
   --line-height-heading: 1.2;
 
