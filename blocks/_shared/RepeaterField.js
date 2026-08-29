@@ -1,6 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
-import { TextControl, TextareaControl, ToggleControl, Button } from '@wordpress/components';
+import { TextControl, TextareaControl, ToggleControl, Button, RadioControl } from '@wordpress/components';
 
 /**
  * Generic repeater UI for a block attribute holding an array of row objects.
@@ -25,10 +25,12 @@ import { TextControl, TextareaControl, ToggleControl, Button } from '@wordpress/
  * @param {string}   props.label    Field group label.
  * @param {Object[]} props.value    Current rows.
  * @param {Function} props.onChange ( rows ) => void
- * @param {Object[]} props.fields   [ { name, label, type: 'text'|'textarea'|'image'|'file'|'link', help, mimeTypes, linkTarget } ]
+ * @param {Object[]} props.fields   [ { name, label, type: 'text'|'textarea'|'image'|'file'|'link'|'radio', help, mimeTypes, linkTarget, options } ]
  *                                  `linkTarget` (link fields only) adds an "open in new tab" toggle,
  *                                  storing `{name}Target` on the row — same opt-in shape as the
- *                                  top-level `link` field type's `link_target` option.
+ *                                  top-level `link` field type's `link_target` option. `options`
+ *                                  (radio fields only) is `[ { label, value } ]`, mirroring the
+ *                                  top-level `select`/`radio` field types' options shape.
  * @param {Object}   props.emptyRow Shape of a freshly-added row, e.g. { stat: '', title: '' }.
  * @param {string}   [props.layout] 'row' (default) or 'column'.
  */
@@ -196,6 +198,19 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 									value={ row[ field.name ] || '' }
 									onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
 									help={ field.help }
+								/>
+							);
+						}
+
+						if ( 'radio' === field.type ) {
+							return (
+								<RadioControl
+									key={ field.name }
+									label={ field.label }
+									hideLabelFromVision={ ! isColumn }
+									selected={ row[ field.name ] || '' }
+									options={ field.options || [] }
+									onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
 								/>
 							);
 						}
