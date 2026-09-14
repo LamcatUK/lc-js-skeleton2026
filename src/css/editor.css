@@ -79,13 +79,18 @@
  */
 .lc-js-skeleton-editor-block > * {
 	margin: 0;
-	padding: 0.75rem 1rem;
+	background: #fff;
+}
+
+.lc-js-skeleton-editor-block__content > * {
+	margin: 0;
 	background: #fff;
 }
 
 /* A block's own plain descriptive text (e.g. "Cards are pulled live from
    the Application post type...") reads as help text, not body copy. */
-.lc-js-skeleton-editor-block > p {
+.lc-js-skeleton-editor-block > p,
+.lc-js-skeleton-editor-block__content > p {
 	font-size: 0.8125rem;
 	color: #757575;
 }
@@ -106,6 +111,10 @@
 }
 
 .lc-js-skeleton-editor-block__title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
 	margin: 0;
 	padding: 1rem 1rem 0.75rem;
 	/* Subtle, not a full section header — just enough to help the eye find
@@ -116,6 +125,43 @@
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color: #555;
+}
+
+.lc-js-skeleton-editor-block__toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border: 1px solid #d0d5d9;
+	border-radius: 999px;
+	padding: 0;
+	background: #fff;
+	color: #555;
+	cursor: pointer;
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1;
+	transition:
+		background-color 150ms ease,
+		border-color 150ms ease,
+		color 150ms ease;
+}
+
+.lc-js-skeleton-editor-block__toggle:hover,
+.lc-js-skeleton-editor-block__toggle:focus-visible {
+	border-color: #8c8f94;
+	background: #f0f0f1;
+	color: #1e1e1e;
+	outline: none;
+}
+
+.lc-js-skeleton-editor-block__content {
+	display: contents;
+}
+
+.lc-js-skeleton-editor-block__content[hidden] {
+	display: none;
 }
 
 /*

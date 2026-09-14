@@ -39,6 +39,38 @@
 	display: grid;
 	grid-template-columns: repeat(var(--grid-columns), 1fr);
 	gap: var(--grid-gutter);
+
+	/*
+	 * Re-declared (rather than left to inherit) so a nested .row inside a
+	 * gapped parent falls back to the standard gutter instead of picking up
+	 * the parent's --gap-size. A .gap-* utility on this same element still
+	 * wins — utilities.css is imported after this file.
+	 */
+	--gap-size: var(--grid-gutter);
+}
+
+/*
+ * Ceiling on the *horizontal* gutter only. A .col-N spans N of the 12 tracks
+ * plus the N-1 gaps between them, so a full-width .col-12 measures
+ * "12 tracks + 11 gaps". Once those 11 gaps exceed the row's own width the
+ * 1fr tracks collapse to 0px and every column overflows its container by a
+ * fixed amount, no matter how little content it holds — `gap-5` (3rem) puts
+ * 528px of gutter in a 343px row at a 375px viewport, which is exactly the
+ * horizontal-scroll bug this pins shut.
+ *
+ * 5% caps the gutters at 55% of the row (11 x 5%), leaving 45% for content,
+ * so overflow becomes arithmetically impossible at any width. It's a ceiling
+ * and not a resize: it only engages when the requested gap is already too
+ * big for the row, so every gap in real use here is untouched (a 3rem gap
+ * stays 3rem down to a 960px row; the 1rem default gutter, to a 320px one).
+ *
+ * .row.row, not .row, to out-specify the single-class .gap-* utilities this
+ * has to clamp. Vertical spacing is deliberately not touched — `gap` above
+ * and the utility both still set row-gap, which has no equivalent failure
+ * mode.
+ */
+.row.row {
+	column-gap: min(var(--gap-size), 5%);
 }
 
 /* Nested rows use subgrid where supported so tracks line up with the parent

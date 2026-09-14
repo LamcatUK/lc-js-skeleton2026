@@ -189,3 +189,86 @@ function estimate_reading_time_in_minutes( $content = '', $words_per_minute = 30
 
 	return $minutes;
 }
+
+/**
+ * Build breadcrumb items for the current singular view.
+ *
+ * @param int $post_id Current post ID.
+ * @return array<int, array{label: string, url: string}>
+ */
+function lc_js_skeleton_get_breadcrumbs( $post_id = 0 ) {
+	$post_id     = $post_id ? (int) $post_id : get_the_ID();
+	$breadcrumbs = array(
+		array(
+			'label' => __( 'Home', 'lc-js-skeleton2026' ),
+			'url'   => home_url( '/' ),
+		),
+	);
+
+	if ( ! $post_id ) {
+		return $breadcrumbs;
+	}
+
+	if ( 'post' === get_post_type( $post_id ) ) {
+		$blog_page_id = (int) get_option( 'page_for_posts' );
+
+		if ( ! $blog_page_id ) {
+			$blog_page    = get_page_by_path( 'blog' );
+			$blog_page_id = $blog_page ? (int) $blog_page->ID : 0;
+		}
+
+		if ( $blog_page_id ) {
+			$breadcrumbs[] = array(
+				'label' => get_the_title( $blog_page_id ),
+				'url'   => get_permalink( $blog_page_id ),
+			);
+		}
+	} elseif ( is_page( $post_id ) || 'page' === get_post_type( $post_id ) ) {
+		$ancestor_ids = array_reverse( get_post_ancestors( $post_id ) );
+
+		foreach ( $ancestor_ids as $ancestor_id ) {
+			$breadcrumbs[] = array(
+				'label' => get_the_title( $ancestor_id ),
+				'url'   => get_permalink( $ancestor_id ),
+			);
+		}
+	}
+
+	$breadcrumbs[] = array(
+		'label' => get_the_title( $post_id ),
+		'url'   => '',
+	);
+
+	return $breadcrumbs;
+}
+
+/**
+ * Render breadcrumb markup with schema metadata.
+ *
+ * @param array  $breadcrumbs Breadcrumb items.
+ * @param string $class_name  Wrapper class name.
+ * @return void
+ */
+function lc_js_skeleton_render_breadcrumbs( $breadcrumbs, $class_name = 'lc-breadcrumbs' ) {
+	if ( empty( $breadcrumbs ) || ! is_array( $breadcrumbs ) || is_front_page() ) {
+		return;
+	}
+	?>
+	<nav class="<?php echo esc_attr( $class_name ); ?>" aria-label="Breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList">
+		<div class="container">
+			<ol class="lc-breadcrumbs__list">
+				<?php foreach ( $breadcrumbs as $index => $breadcrumb ) { ?>
+					<li class="lc-breadcrumbs__item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+						<?php if ( ! empty( $breadcrumb['url'] ) ) { ?>
+							<a href="<?php echo esc_url( $breadcrumb['url'] ); ?>" itemprop="item"><span itemprop="name"><?php echo esc_html( $breadcrumb['label'] ); ?></span></a>
+						<?php } else { ?>
+							<span itemprop="name" aria-current="page"><?php echo esc_html( $breadcrumb['label'] ); ?></span>
+						<?php } ?>
+						<meta itemprop="position" content="<?php echo esc_attr( $index + 1 ); ?>">
+					</li>
+				<?php } ?>
+			</ol>
+		</div>
+	</nav>
+	<?php
+}

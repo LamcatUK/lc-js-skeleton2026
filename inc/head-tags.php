@@ -100,3 +100,65 @@ function lc_js_skeleton_gtm_noscript() {
 	<?php
 }
 add_action( 'wp_body_open', 'lc_js_skeleton_gtm_noscript' );
+
+/**
+ * Print one of the three raw script slots from the Site-Wide Settings
+ * "Scripts" tab.
+ *
+ * Deliberately unescaped: the whole point of these fields is to paste a
+ * vendor's snippet verbatim — <script> tags, inline JS, <noscript> pixels —
+ * and have it reach the page unchanged. Escaping or running it through
+ * wp_kses() would defeat the feature entirely. The settings page is the trust
+ * boundary here, not this function.
+ *
+ * @param string $key Setting key: custom_head, custom_body_open, custom_body_close.
+ * @return void
+ */
+function lc_js_skeleton_print_custom_scripts( $key ) {
+	// Default-on, matching GA/GTM — see the checkbox renderer for why '0' and
+	// not '' is the unticked value.
+	if ( lc_js_skeleton_get_setting( 'custom_scripts_logged_out_only', '1' ) && is_user_logged_in() ) {
+		return;
+	}
+
+	$markup = lc_js_skeleton_get_setting( $key );
+	if ( ! $markup ) {
+		return;
+	}
+
+	printf( "\n<!-- %s -->\n%s\n", esc_html( $key ), $markup ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pasted third-party snippets, printed verbatim by design; see docblock.
+}
+
+/**
+ * Wire each script slot to its hook. The head and footer slots run late
+ * (priority 99) so anything the theme manages itself — GA/GTM, verification
+ * metas, font preloads — is already on the page first, and a pasted snippet
+ * that depends on dataLayer existing finds it there.
+ *
+ * @return void
+ */
+function lc_js_skeleton_custom_head_scripts() {
+	lc_js_skeleton_print_custom_scripts( 'custom_head' );
+}
+add_action( 'wp_head', 'lc_js_skeleton_custom_head_scripts', 99 );
+
+/**
+ * Body-open slot — runs after the GTM noscript fallback above (default
+ * priority 10 on the same hook, registered earlier).
+ *
+ * @return void
+ */
+function lc_js_skeleton_custom_body_open_scripts() {
+	lc_js_skeleton_print_custom_scripts( 'custom_body_open' );
+}
+add_action( 'wp_body_open', 'lc_js_skeleton_custom_body_open_scripts', 20 );
+
+/**
+ * Body-close slot.
+ *
+ * @return void
+ */
+function lc_js_skeleton_custom_body_close_scripts() {
+	lc_js_skeleton_print_custom_scripts( 'custom_body_close' );
+}
+add_action( 'wp_footer', 'lc_js_skeleton_custom_body_close_scripts', 99 );
