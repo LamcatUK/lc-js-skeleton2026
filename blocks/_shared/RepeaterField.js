@@ -25,7 +25,7 @@ import { TextControl, TextareaControl, ToggleControl, Button, RadioControl } fro
  * @param {string}   props.label    Field group label.
  * @param {Object[]} props.value    Current rows.
  * @param {Function} props.onChange ( rows ) => void
- * @param {Object[]} props.fields   [ { name, label, type: 'text'|'textarea'|'image'|'file'|'link'|'radio', help, mimeTypes, linkTarget, options } ]
+ * @param {Object[]} props.fields   [ { name, label, type: 'text'|'number'|'textarea'|'image'|'file'|'link'|'radio', help, mimeTypes, linkTarget, options } ]
  *                                  `linkTarget` (link fields only) adds an "open in new tab" toggle,
  *                                  storing `{name}Target` on the row — same opt-in shape as the
  *                                  top-level `link` field type's `link_target` option. `options`
@@ -211,6 +211,20 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 									selected={ row[ field.name ] || '' }
 									options={ field.options || [] }
 									onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
+								/>
+							);
+						}
+
+						if ( 'number' === field.type ) {
+							return (
+								<TextControl
+									key={ field.name }
+									type="number"
+									label={ field.label }
+									hideLabelFromVision={ ! isColumn }
+									value={ row[ field.name ] ?? '' }
+									onChange={ ( v ) => updateRow( index, { [ field.name ]: '' === v ? '' : Number( v ) } ) }
+									help={ field.help }
 								/>
 							);
 						}

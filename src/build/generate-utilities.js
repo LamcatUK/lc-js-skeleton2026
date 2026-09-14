@@ -62,11 +62,20 @@ function generateUtilities() {
 		}
 	}
 
-	// gap-{n} — responsive, driven off the spacing scale in tokens.config.js
+	// gap-{n} — responsive, driven off the spacing scale in tokens.config.js.
+	//
+	// Also publishes the requested size as --gap-size. That's purely so .row
+	// can read back "what gap was asked for" and clamp the horizontal half of
+	// it — a 12-track grid overflows if 11 column gaps exceed its own width.
+	// See the --gap-size / column-gap pair in src/css/layout.css for the whole
+	// story; nothing else consumes this property, and `gap` stays the thing
+	// actually doing the work for every non-.row (flex, .grid) use.
 	for (const bp of Object.keys(breakpoints)) {
 		for (const n of spacingScale) {
 			const className = bp ? `gap-${bp}-${n}` : `gap-${n}`;
-			rulesByBreakpoint[bp].push(`.${className} { gap: var(--space-${n}); }`);
+			rulesByBreakpoint[bp].push(
+				`.${className} { --gap-size: var(--space-${n}); gap: var(--space-${n}); }`
+			);
 		}
 	}
 

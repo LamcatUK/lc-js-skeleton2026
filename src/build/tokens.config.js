@@ -78,6 +78,6 @@ const utilities = {
 };
 
 // Spacing utilities (gap, margin, padding) driven off the tokens.css spacing scale.
-const spacingScale = [0, 1, 2, 3, 4, 5];
+const spacingScale = [0, 1, 2, 3, 4, 5, 6];
 
 module.exports = { breakpoints, gridColumns, utilities, spacingScale };

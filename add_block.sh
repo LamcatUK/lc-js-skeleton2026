@@ -343,18 +343,18 @@ done
   echo "import { __ } from '@wordpress/i18n';"
   echo "import { ${blockeditor_imports} } from '@wordpress/block-editor';"
   [ -n "$components_import_line" ] && echo "import { ${components_import_line} } from '@wordpress/components';"
+  echo "import EditorBlockShell from '../../_shared/EditorBlockShell';"
   echo ""
-  echo "export default function Edit( { attributes, setAttributes } ) {"
+  echo "export default function Edit( { attributes, setAttributes, clientId } ) {"
   if [ -n "$attr_destructure_line" ]; then
     echo "	const { ${attr_destructure_line} } = attributes;"
   fi
   echo "	const blockProps = useBlockProps( { className: 'container lc-js-skeleton-editor-block' } );"
   echo ""
   echo "	return ("
-  echo "		<div { ...blockProps }>"
-  echo "			<p className=\"lc-js-skeleton-editor-block__title\">${block_name}</p>"
+  echo "		<EditorBlockShell blockProps={ blockProps } clientId={ clientId } title=\"${block_name}\" textDomain=\"${theme_slug}\">"
   printf "%b" "$controls"
-  echo "		</div>"
+  echo "		</EditorBlockShell>"
   echo "	);"
   echo "}"
 } > "${block_dir}/src/edit.js"
@@ -429,7 +429,7 @@ cat > "${block_dir}/render.php" <<EOF
 defined( 'ABSPATH' ) || exit;
 
 $(printf "%b" "$extract_lines")
-\$wrapper_attributes = get_block_wrapper_attributes( array( 'class' => 'container' ) );
+\$wrapper_attributes = get_block_wrapper_attributes( array( 'class' => '${block_kebab}' ) );
 ?>
 <section <?php echo \$wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() already escapes. ?>>
 $(printf "%b" "$markup_lines")</section>
