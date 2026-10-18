@@ -272,3 +272,97 @@ function lc_js_skeleton_render_breadcrumbs( $breadcrumbs, $class_name = 'lc-brea
 	</nav>
 	<?php
 }
+
+/**
+ * Build a Vimeo player embed URL from any Vimeo link.
+ *
+ * Accepts plain (vimeo.com/123456789), channel/group
+ * (vimeo.com/channels/staffpicks/123456789), player
+ * (player.vimeo.com/video/123456789), and unlisted links carrying the
+ * private hash either in the path (vimeo.com/123456789/abcdef1234) or as
+ * ?h=abcdef1234. Anything that isn't a Vimeo URL, or has no numeric video
+ * ID, returns an empty string — callers use that to fall back to a plain
+ * link instead of a modal player.
+ *
+ * @param string $url URL as entered.
+ * @return string Embed URL (autoplay + dnt), or '' if not a Vimeo video link.
+ */
+function lc_js_skeleton_get_vimeo_embed_url( $url ) {
+	if ( ! is_string( $url ) || '' === trim( $url ) ) {
+		return '';
+	}
+
+	$parts = wp_parse_url( $url );
+
+	if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+		return '';
+	}
+
+	$host = strtolower( preg_replace( '/^www\./', '', $parts['host'] ) );
+
+	if ( ! in_array( $host, array( 'vimeo.com', 'player.vimeo.com' ), true ) ) {
+		return '';
+	}
+
+	if ( empty( $parts['path'] ) || ! preg_match_all( '#/(\d+)#', $parts['path'], $matches ) ) {
+		return '';
+	}
+
+	$video_id = end( $matches[1] );
+	$hash     = '';
+
+	if ( preg_match( '#/' . $video_id . '/([a-f0-9]+)#i', $parts['path'], $hash_match ) ) {
+		$hash = $hash_match[1];
+	}
+
+	if ( ! $hash && ! empty( $parts['query'] ) ) {
+		parse_str( $parts['query'], $query );
+
+		if ( ! empty( $query['h'] ) && is_string( $query['h'] ) && preg_match( '/^[a-f0-9]+$/i', $query['h'] ) ) {
+			$hash = $query['h'];
+		}
+	}
+
+	$embed_url = 'https://player.vimeo.com/video/' . $video_id . '?autoplay=1&dnt=1';
+
+	if ( $hash ) {
+		$embed_url .= '&h=' . $hash;
+	}
+
+	return $embed_url;
+}
+
+/**
+ * Format a byte count for display next to a download link — whole kb,
+ * switching to 1dp Mb at 1MB+ ("235kb", "1.2Mb").
+ *
+ * @param int $bytes Byte count.
+ * @return string
+ */
+function lc_js_skeleton_format_file_size( $bytes ) {
+	$bytes = (int) $bytes;
+
+	if ( $bytes >= 1048576 ) {
+		return rtrim( rtrim( number_format( $bytes / 1048576, 1 ), '0' ), '.' ) . 'Mb';
+	}
+
+	return round( $bytes / 1024 ) . 'kb';
+}
+
+/**
+ * Uppercase file extension for an attachment, read straight off the real
+ * file path — deliberately not wp_check_filetype(), which only recognises
+ * WordPress's allowed-uploads list and returns blank for anything else.
+ *
+ * @param int $attachment_id Attachment ID.
+ * @return string e.g. "PDF", "XHTML", or "" when unresolvable.
+ */
+function lc_js_skeleton_get_attachment_ext( $attachment_id ) {
+	$path = get_attached_file( (int) $attachment_id );
+
+	if ( ! $path ) {
+		return '';
+	}
+
+	return strtoupper( pathinfo( $path, PATHINFO_EXTENSION ) );
+}
