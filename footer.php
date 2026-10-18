@@ -15,7 +15,7 @@
 	</div>
 	<div id="colophon">
 		<div class="container">
-			<p>&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> <?php bloginfo( 'name' ); ?></p>
+			<p>&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> <?php echo esc_html( get_bloginfo( 'name' ) ); ?></p>
 		</div>
 	</div>
 </footer>

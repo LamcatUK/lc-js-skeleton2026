@@ -21,6 +21,22 @@ import { useEffect, useMemo, useState } from '@wordpress/element';
  * @param {boolean}  [props.defaultOpen]    Initial state before localStorage is read.
  * @param {*}        props.children         The block's own field controls.
  */
+/**
+ * Keep Shift+Arrow inside the field being edited. Gutenberg's writing flow
+ * listens for keydown on an ancestor and, when the caret is at the edge of a
+ * field, turns Shift+Arrow into a block-level multi-selection — so extending
+ * a text selection in one of this block's inputs jumps to selecting the whole
+ * block. Stopping the React event here means the browser's native text
+ * selection handles it and the writing flow never sees it.
+ *
+ * @param {KeyboardEvent} event React keydown event.
+ */
+function keepShiftArrowInField( event ) {
+	if ( event.shiftKey && ! event.ctrlKey && ! event.metaKey && event.key.startsWith( 'Arrow' ) ) {
+		event.stopPropagation();
+	}
+}
+
 export default function EditorBlockShell( {
 	blockProps,
 	clientId,
@@ -101,7 +117,7 @@ export default function EditorBlockShell( {
 					<span aria-hidden="true">{ isOpen ? '−' : '+' }</span>
 				</button>
 			</div>
-			<div id={ contentId } className={ `${ classPrefix }-editor-block__content` } hidden={ ! isOpen }>
+			<div id={ contentId } className={ `${ classPrefix }-editor-block__content` } hidden={ ! isOpen } onKeyDown={ keepShiftArrowInField }>
 				{ children }
 			</div>
 		</div>
