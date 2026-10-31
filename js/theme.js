@@ -92,10 +92,18 @@
 	      closeBtn.addEventListener('click', () => dialog.close());
 	    });
 
-	    // Click on the backdrop (the dialog element itself, outside its content) closes it.
-	    dialog.addEventListener('click', event => {
-	      if (event.target === dialog) dialog.close();
-	    });
+// Click on the backdrop (the dialog element itself, outside its content) closes it.
+    dialog.addEventListener('click', event => {
+      if (event.target === dialog) dialog.close();
+    });
+
+    // Unload lazy iframes on close — removes the video from the page so
+    // playback (and tracking) stops, ready to load fresh next open.
+    dialog.addEventListener('close', () => {
+      dialog.querySelectorAll('iframe[data-src]').forEach(frame => {
+        frame.removeAttribute('src');
+      });
+    });
 	  });
 	}
 

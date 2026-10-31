@@ -19,29 +19,11 @@ const fs = require('fs');
 const path = require('path');
 const fg = require('fast-glob');
 const { breakpoints, gridColumns, utilities, spacingScale } = require('./tokens.config');
+const { readTokensFromFile } = require('./read-tokens');
 
 const cssDir = path.resolve(__dirname, '../css');
 const blocksStylesDir = path.resolve(__dirname, '../blocks');
 const tokensFile = path.resolve(cssDir, 'tokens.css');
-
-// Reads --{prefix}* custom properties straight out of tokens.css's :root block
-// (same approach as generate-theme-json.js) so a utility's value set stays in
-// sync with the token scale with no second place to edit.
-function readTokenValues(prefix) {
-	const cssContent = fs.readFileSync(tokensFile, 'utf8');
-	const rootBlockMatch = cssContent.match(/:root\s*{([\s\S]*?)}/);
-	if (!rootBlockMatch) return {};
-	const varRegex = /--([\w-]+):\s*([^;]+);/g;
-	const values = {};
-	let match;
-	while ((match = varRegex.exec(rootBlockMatch[1])) !== null) {
-		const key = match[1];
-		if (key.startsWith(prefix)) {
-			values[key.slice(prefix.length)] = `var(--${key})`;
-		}
-	}
-	return values;
-}
 
 function generateUtilities() {
 	const rulesByBreakpoint = {};
@@ -52,7 +34,8 @@ function generateUtilities() {
 	// display / flex-direction / justify-content / align-items / text-align / font-weight
 	for (const [key, def] of Object.entries(utilities)) {
 		const base = def.className || key;
-		const values = def.tokenPrefix ? readTokenValues(def.tokenPrefix) : def.values;
+		const tokens = readTokensFromFile(tokensFile);
+		const values = def.tokenPrefix ? tokens : def.values;
 		const bps = def.responsive === false ? [''] : Object.keys(breakpoints);
 		for (const bp of bps) {
 			for (const [suffix, value] of Object.entries(values)) {
@@ -141,7 +124,7 @@ function generateUtilities() {
 			output += `@media (min-width: ${px}px) {\n${rules
 				.split('\n')
 				.map((l) => '\t' + l)
-				.join('\n')}\n}\n\n`;
+				.join('\n')}\n\n`;
 		}
 	}
 
