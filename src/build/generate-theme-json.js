@@ -9,28 +9,16 @@
 // theme.json with a color palette and font sizes for Gutenberg.
 //
 // Looks for:
-// - Color variables: --col-* (excluding aliases like --col-primary that just
-//   point at another color — only "real" palette colors get listed)
+// - Color variables: --col-{slug} (excluding aliases like --col-primary that
+//   just point at another color — only "real" palette colors get listed)
 // - Font size variables: --fs-*
 
 const fs = require('fs');
 const path = require('path');
+const { readTokensFromFile } = require('./read-tokens');
 
 const tokensFile = path.join(__dirname, '../css/tokens.css');
 const themeJsonFile = path.join(__dirname, '../../theme.json');
-
-function parseCssVariables(cssContent) {
-	const rootBlockMatch = cssContent.match(/:root\s*{([\s\S]*?)}/);
-	if (!rootBlockMatch) return {};
-	const rootContent = rootBlockMatch[1];
-	const varRegex = /--([\w-]+):\s*([^;]+);/g;
-	const tokens = {};
-	let match;
-	while ((match = varRegex.exec(rootContent)) !== null) {
-		tokens[match[1]] = match[2].trim();
-	}
-	return tokens;
-}
 
 function buildThemeJson(tokens) {
 	// Palette colors: --col-{slug} whose value is a literal color, not a
@@ -69,8 +57,7 @@ function main() {
 		console.error('Tokens file not found:', tokensFile);
 		process.exit(1);
 	}
-	const cssContent = fs.readFileSync(tokensFile, 'utf8');
-	const tokens = parseCssVariables(cssContent);
+	const tokens = readTokensFromFile(tokensFile);
 	const themeJson = buildThemeJson(tokens);
 	fs.writeFileSync(themeJsonFile, JSON.stringify(themeJson, null, 2));
 	console.log('theme.json generated successfully.');
