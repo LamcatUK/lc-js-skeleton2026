@@ -403,3 +403,28 @@
 	margin-top: 0.75rem;
 	margin-bottom: 1.5rem;
 }
+
+/*
+ * A row that has just been moved (blocks/_shared/useRowMotion.js): a tint that fades out, so you can
+ * keep track of which row went where. With reduced motion it shows for the same time with no fade.
+ */
+.lc-js-skeleton-repeater-field__row.is-moved {
+	animation: lc-js-skeleton-row-moved 1.2s ease-out;
+}
+
+@keyframes lc-js-skeleton-row-moved {
+	from {
+		background-color: rgb(255 180 34 / 0.4);
+	}
+
+	to {
+		background-color: transparent;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lc-js-skeleton-repeater-field__row.is-moved {
+		animation: none;
+		background-color: rgb(255 180 34 / 0.4);
+	}
+}
