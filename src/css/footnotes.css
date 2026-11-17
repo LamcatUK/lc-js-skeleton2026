@@ -1,0 +1,33 @@
+/* Footnotes ([Footnote] tags → numbered list, see inc/footnotes.php).
+   Ported from the lcp-footnotes plugin's own stylesheet so existing content
+   renders identically with the plugin gone — part of theme.min.css,
+   no separate stylesheet to enqueue. */
+
+.lcp-footnotes-box {
+	margin-top: 2rem;
+	padding: 1rem 1.25rem;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 0.875em;
+}
+
+.lcp-footnotes-box .lcp-footnotes-list {
+	margin: 0;
+	padding-left: 1.25rem;
+}
+
+.lcp-footnotes-box .lcp-footnotes-list li + li {
+	margin-top: 0.5em;
+}
+
+.lcp-footnote-backlink {
+	text-decoration: none;
+	margin-left: 0.25em;
+}
+
+/* Anchor targets (list entries and the in-text backlink targets): land
+   below the fixed header via the theme's --nav-height, degrading to
+   breathing room only without it. */
+[id^="footnote-"] {
+	scroll-margin-top: calc(var(--nav-height, var(--h-top, 0px)) + 1rem);
+}

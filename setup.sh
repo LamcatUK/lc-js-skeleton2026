@@ -59,6 +59,25 @@ while [ "$header_style" != "flat" ] && [ "$header_style" != "stacked" ]; do
   header_style="${header_style_input:-flat}"
 done
 
+# Optional modules — each modules/<name>/ is a self-contained opt-in feature
+# (module.conf + a files/ overlay copied into the theme root). Chosen ones
+# are installed and wired in below; modules/ itself is then deleted, so the
+# project only carries what it actually uses.
+selected_modules=()
+if [ -d modules ]; then
+  echo ""
+  echo "Optional modules (answer y to include; default n):"
+  for module_dir in modules/*/; do
+    module_name=$(basename "$module_dir")
+    [ -f "${module_dir}module.conf" ] || continue
+    module_desc=$(grep -m1 '^description=' "${module_dir}module.conf" | cut -d= -f2-)
+    read -p "  ${module_name} — ${module_desc} [y/N]: " module_answer
+    if [ "$module_answer" = "y" ] || [ "$module_answer" = "Y" ]; then
+      selected_modules+=("$module_name")
+    fi
+  done
+fi
+
 # Lowercase/uppercase PHP fn/const prefixes derived from the *confirmed*
 # slug, not the raw name, so they can't silently diverge from it.
 new_prefix=$(echo "$new_slug" | tr '-' '_')
@@ -102,6 +121,11 @@ echo "  ${old_prefix_kebab}- (editor CSS classes)  -> ${new_prefix_kebab}-"
 echo "  $old_nav_walker_file -> $new_nav_walker_file"
 echo "  browser-sync proxy: localhost/ -> ${new_local_url}/"
 echo "  header.php header/nav section -> templates/header-${header_style}.php"
+if [ ${#selected_modules[@]} -gt 0 ]; then
+  echo "  optional modules -> ${selected_modules[*]}"
+else
+  echo "  optional modules -> none"
+fi
 echo ""
 echo "...then delete .git and start a fresh history (first commit only —"
 echo "GitHub repo creation and push are left to you)."
@@ -149,9 +173,20 @@ fi
 # Rename the nav walker file to match its now-renamed class (see above —
 # WPCS requires this, and the content substitution above doesn't touch
 # filenames).
+#
+# NOTE: the mass sed loop above already rewrote any occurrence of
+# old_prefix_kebab it found in functions.php's require_once line — but it
+# did so using new_prefix_kebab, which is derived from the *slug*. The
+# actual file we're renaming to ($new_nav_walker_file) is derived from the
+# *name* (word-by-word pascal case), and slug/name are allowed to diverge
+# (see the slug prompt above). So functions.php's require_once path and the
+# real on-disk filename can disagree at this point. Don't try to match the
+# literal $old_nav_walker_file string here — it may no longer be present.
+# Instead, repoint whatever nav-walker require_once line currently exists
+# at the real, just-renamed file.
 if [ -f "$old_nav_walker_file" ]; then
   mv "$old_nav_walker_file" "$new_nav_walker_file"
-  sed -i "s#${old_nav_walker_file}#${new_nav_walker_file}#g" functions.php
+  sed -i -E "s#inc/class-[A-Za-z0-9_-]+-nav-walker\.php#${new_nav_walker_file}#" functions.php
   echo "Renamed $old_nav_walker_file -> $new_nav_walker_file"
 else
   echo "Warning: $old_nav_walker_file not found — skipping nav walker filename rename."
@@ -185,6 +220,48 @@ fi
 # not an ongoing generated-file relationship.
 rm -f templates/header-flat.php templates/header-stacked.php
 rmdir templates 2>/dev/null || true
+
+# Install the chosen optional modules (see the prompt above). Runs after the
+# rename pass, so module files already carry the project's own prefixes.
+# module.conf keys (each may repeat):
+#   description=...                       one-liner shown in the prompt
+#   js_import=fnName|./file[|first]       import + call from src/js/theme.js
+#                                         (|first = call before the others)
+#   css_import=file.css                   @import appended to src/css/theme.css
+#   php_require=inc/file.php              require_once appended in functions.php
+for module_name in "${selected_modules[@]}"; do
+  module_dir="modules/${module_name}"
+
+  if [ -d "${module_dir}/files" ]; then
+    cp -r "${module_dir}/files/." .
+  fi
+
+  while IFS='|' read -r fn path position; do
+    [ -n "$fn" ] || continue
+    last_import=$(grep -n '^import ' src/js/theme.js | tail -1 | cut -d: -f1)
+    sed -i "${last_import}a import { ${fn} } from '${path}';" src/js/theme.js
+    if [ "$position" = "first" ]; then
+      sed -i "/DOMContentLoaded/a\\	${fn}();" src/js/theme.js
+    else
+      last_close=$(grep -n '^});' src/js/theme.js | tail -1 | cut -d: -f1)
+      sed -i "${last_close}i\\	${fn}();" src/js/theme.js
+    fi
+  done < <(grep '^js_import=' "${module_dir}/module.conf" | cut -d= -f2-)
+
+  while read -r css_file; do
+    [ -n "$css_file" ] || continue
+    printf '@import "%s"; /* module: %s */\n' "$css_file" "$module_name" >> src/css/theme.css
+  done < <(grep '^css_import=' "${module_dir}/module.conf" | cut -d= -f2-)
+
+  while read -r php_file; do
+    [ -n "$php_file" ] || continue
+    last_require=$(grep -n '^require_once ' functions.php | tail -1 | cut -d: -f1)
+    sed -i "${last_require}a require_once ${new_prefix_upper}_DIR . '/${php_file}';" functions.php
+  done < <(grep '^php_require=' "${module_dir}/module.conf" | cut -d= -f2-)
+
+  echo "Installed module: ${module_name}"
+done
+rm -rf modules
 
 # Reset git to a fresh history.
 rm -rf .git

@@ -18,18 +18,20 @@ if ( ! defined( 'DISALLOW_FILE_EDIT' ) ) {
 	define( 'DISALLOW_FILE_EDIT', true );
 }
 
-define( 'LC_SKELETON_DIR', get_template_directory() );
+define( 'LC_JS_SKELETON_DIR', get_template_directory() );
 
-require_once LC_SKELETON_DIR . '/inc/setup.php';
-require_once LC_SKELETON_DIR . '/inc/enqueue.php';
-require_once LC_SKELETON_DIR . '/inc/class-lc-skeleton-nav-walker.php';
-require_once LC_SKELETON_DIR . '/inc/blocks.php';
-require_once LC_SKELETON_DIR . '/inc/editor.php';
-require_once LC_SKELETON_DIR . '/inc/options.php';
-require_once LC_SKELETON_DIR . '/inc/social-icons.php';
-require_once LC_SKELETON_DIR . '/inc/head-tags.php';
-require_once LC_SKELETON_DIR . '/inc/block-usage.php';
-require_once LC_SKELETON_DIR . '/inc/utilities.php';
-require_once LC_SKELETON_DIR . '/inc/posttypes.php';
-require_once LC_SKELETON_DIR . '/inc/taxonomies.php';
-require_once LC_SKELETON_DIR . '/inc/security.php';
+require_once LC_JS_SKELETON_DIR . '/inc/setup.php';
+require_once LC_JS_SKELETON_DIR . '/inc/enqueue.php';
+require_once LC_JS_SKELETON_DIR . '/inc/class-lc-skeleton-nav-walker.php';
+require_once LC_JS_SKELETON_DIR . '/inc/blocks.php';
+require_once LC_JS_SKELETON_DIR . '/inc/editor.php';
+require_once LC_JS_SKELETON_DIR . '/inc/options.php';
+require_once LC_JS_SKELETON_DIR . '/inc/social-icons.php';
+require_once LC_JS_SKELETON_DIR . '/inc/head-tags.php';
+require_once LC_JS_SKELETON_DIR . '/inc/block-usage.php';
+require_once LC_JS_SKELETON_DIR . '/inc/utilities.php';
+require_once LC_JS_SKELETON_DIR . '/inc/posttypes.php';
+require_once LC_JS_SKELETON_DIR . '/inc/taxonomies.php';
+require_once LC_JS_SKELETON_DIR . '/inc/security.php';
+require_once LC_JS_SKELETON_DIR . '/inc/toc.php';
+require_once LC_JS_SKELETON_DIR . '/inc/footnotes.php';

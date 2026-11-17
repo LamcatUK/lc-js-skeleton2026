@@ -1,0 +1,54 @@
+/*
+ * Fixed header with a static offset — no JS measuring, no layout shift.
+ * .navbar is exactly --nav-height tall (content vertically centred), so
+ * plain padding-top on main always clears it. Padding, not margin: a margin
+ * would collapse with the first child's own margin-top and swallow it. The
+ * +1px covers a 1px header border-bottom, if the project adds one.
+ *
+ * --nav-height (tokens.css) is the desktop height; --nav-height-mobile
+ * replaces it below the lg breakpoint (992px — hand-kept in sync with
+ * src/build/tokens.config.js, like nav.css). Every --nav-height consumer
+ * (anchor scroll margins, footnotes, TOC, layout.css) follows automatically.
+ */
+
+:root {
+	--nav-height-mobile: 64px;
+}
+
+@media (max-width: 991px) {
+	:root {
+		--nav-height: var(--nav-height-mobile);
+	}
+}
+
+#masthead {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 50;
+	background-color: var(--col-body-bg);
+	/* Backstop: a fixed left:0/right:0 bar sizes against the scrollable
+	   overflow width (not the viewport) once the page scrolls sideways for
+	   any reason, stretching the nav with it. Viewport units are immune. */
+	max-width: 100vw;
+}
+
+body.admin-bar #masthead {
+	top: 32px;
+}
+
+@media (max-width: 782px) {
+	body.admin-bar #masthead {
+		top: 46px;
+	}
+}
+
+main {
+	padding-top: calc(var(--nav-height) + 1px);
+}
+
+.navbar {
+	height: var(--nav-height);
+	padding-block: 0;
+}

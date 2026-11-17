@@ -2,7 +2,7 @@ import { __ } from '@wordpress/i18n';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import { useInstanceId } from '@wordpress/compose';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useMemo, useState } from '@wordpress/element';
+import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 
 /**
  * Wraps a block's edit.js output in a collapsible section with a title bar
@@ -21,22 +21,6 @@ import { useEffect, useMemo, useState } from '@wordpress/element';
  * @param {boolean}  [props.defaultOpen]    Initial state before localStorage is read.
  * @param {*}        props.children         The block's own field controls.
  */
-/**
- * Keep Shift+Arrow inside the field being edited. Gutenberg's writing flow
- * listens for keydown on an ancestor and, when the caret is at the edge of a
- * field, turns Shift+Arrow into a block-level multi-selection — so extending
- * a text selection in one of this block's inputs jumps to selecting the whole
- * block. Stopping the React event here means the browser's native text
- * selection handles it and the writing flow never sees it.
- *
- * @param {KeyboardEvent} event React keydown event.
- */
-function keepShiftArrowInField( event ) {
-	if ( event.shiftKey && ! event.ctrlKey && ! event.metaKey && event.key.startsWith( 'Arrow' ) ) {
-		event.stopPropagation();
-	}
-}
-
 export default function EditorBlockShell( {
 	blockProps,
 	clientId,
@@ -48,6 +32,7 @@ export default function EditorBlockShell( {
 	defaultOpen = true,
 } ) {
 	const [ isOpen, setIsOpen ] = useState( defaultOpen );
+	const contentRef = useRef();
 	const instanceId = useInstanceId( EditorBlockShell );
 	const contentId = `${ classPrefix }-editor-block-content-${ instanceId }`;
 	const blockPath = useSelect(
@@ -102,6 +87,47 @@ export default function EditorBlockShell( {
 		window.localStorage.setItem( storageKey, isOpen ? 'open' : 'closed' );
 	}, [ isOpen, storageKey ] );
 
+	// Confirmed live as a real, reproducible bug, not a theory: every field in
+	// a block's own fields-form UI (TextControl, RichText, the repeater's own
+	// inputs) renders inside the block's own canvas output, which sits inside
+	// Gutenberg's WritingFlow component — the same wrapper that manages
+	// block-to-block multi-selection. Pressing Shift+Arrow with the cursor
+	// mid-text (not at a boundary — ruled out as WordPress's own intentional
+	// "extend past the edge" behaviour) handed focus to WritingFlow's own
+	// handler instead of the input doing its own text selection.
+	//
+	// A React onKeyDown prop + event.stopPropagation() here does NOT fix it:
+	// per Gutenberg's own source
+	// (packages/block-editor/src/components/writing-flow/use-arrow-nav.js),
+	// WritingFlow intercepts with a plain native `node.addEventListener(
+	// 'keydown', onKeyDown )` on its own wrapper element — not a React
+	// synthetic handler. That native listener fires during real DOM bubble
+	// propagation, which reaches it before React's own internal delegated
+	// dispatch (which is what actually invokes a React onKeyDown prop) ever
+	// gets to run — so stopping propagation inside React's synthetic system is
+	// always too late. Only a real addEventListener on a descendant node (this
+	// one) intercepts during native bubbling before it reaches WritingFlow's
+	// own ancestor listener.
+	useEffect( () => {
+		const node = contentRef.current;
+
+		if ( ! node ) {
+			return;
+		}
+
+		function stopShiftArrowFromReachingWritingFlow( event ) {
+			if ( event.shiftKey && [ 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight' ].includes( event.key ) ) {
+				event.stopPropagation();
+			}
+		}
+
+		node.addEventListener( 'keydown', stopShiftArrowFromReachingWritingFlow );
+
+		return () => {
+			node.removeEventListener( 'keydown', stopShiftArrowFromReachingWritingFlow );
+		};
+	}, [] );
+
 	return (
 		<div { ...blockProps }>
 			<div className={ `${ classPrefix }-editor-block__title` }>
@@ -117,7 +143,7 @@ export default function EditorBlockShell( {
 					<span aria-hidden="true">{ isOpen ? '−' : '+' }</span>
 				</button>
 			</div>
-			<div id={ contentId } className={ `${ classPrefix }-editor-block__content` } hidden={ ! isOpen } onKeyDown={ keepShiftArrowInField }>
+			<div id={ contentId } ref={ contentRef } className={ `${ classPrefix }-editor-block__content` } hidden={ ! isOpen }>
 				{ children }
 			</div>
 		</div>

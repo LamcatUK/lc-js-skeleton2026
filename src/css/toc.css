@@ -1,0 +1,38 @@
+/* Table of contents ([lc_toc], inc/toc.php). Plain structured list; heading
+   ids are injected by filter, so anchors always resolve. h2 anchor targets
+   stop below a fixed nav when --nav-height is defined (see the fixed-header
+   module), degrading to breathing room only without it. */
+
+.lc-toc {
+	margin-block: 0 var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--col-grey-300);
+	border-radius: var(--radius-lg);
+	background-color: var(--col-grey-100);
+}
+
+.lc-toc__title {
+	margin-block: 0 var(--space-2);
+}
+
+.lc-toc__list {
+	margin: 0;
+	padding-left: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+
+.lc-toc__link {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.lc-toc__link:hover {
+	color: var(--col-primary);
+}
+
+article h2[id] {
+	scroll-margin-top: calc(var(--nav-height, 0px) + 1rem);
+}

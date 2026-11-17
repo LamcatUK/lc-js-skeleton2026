@@ -1,6 +1,7 @@
 import { __ } from '@wordpress/i18n';
 import { MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
 import { TextControl, TextareaControl, ToggleControl, Button, RadioControl } from '@wordpress/components';
+import SiteUrlInput from './SiteUrlInput';
 import useRowMotion from './useRowMotion';
 
 /**
@@ -27,6 +28,8 @@ import useRowMotion from './useRowMotion';
  * @param {Object[]} props.value    Current rows.
  * @param {Function} props.onChange ( rows ) => void
  * @param {Object[]} props.fields   [ { name, label, type: 'text'|'number'|'textarea'|'image'|'file'|'link'|'radio', help, mimeTypes, linkTarget, options } ]
+ *                                  The URL half of a `link` field is SiteUrlInput (type-ahead search of
+ *                                  pages and posts, plain text when nothing matches).
  *                                  `linkTarget` (link fields only) adds an "open in new tab" toggle,
  *                                  storing `{name}Target` on the row — same opt-in shape as the
  *                                  top-level `link` field type's `link_target` option. `options`
@@ -130,14 +133,14 @@ export default function RepeaterField( { label, value, onChange, fields, emptyRo
 										value={ row[ `${ field.name }Text` ] || '' }
 										onChange={ ( v ) => updateRow( index, { [ `${ field.name }Text` ]: v } ) }
 									/>
-									<TextControl
-										type="url"
-										label={ __( `${ field.label } URL`, 'lc-js-skeleton2026' ) }
-										hideLabelFromVision={ ! isColumn }
-										value={ row[ field.name ] || '' }
+									<span className={ isColumn ? 'lc-js-skeleton-editor-field__label' : 'screen-reader-text' }>
+										{ __( `${ field.label } URL`, 'lc-js-skeleton2026' ) }
+									</span>
+									<SiteUrlInput
+										value={ row[ field.name ] }
 										onChange={ ( v ) => updateRow( index, { [ field.name ]: v } ) }
-										help={ field.help }
 									/>
+									{ field.help && <p className="lc-js-skeleton-editor-field__help">{ field.help }</p> }
 									{ field.linkTarget && (
 										<ToggleControl
 											label={ __( `Open ${ field.label } in a new tab`, 'lc-js-skeleton2026' ) }

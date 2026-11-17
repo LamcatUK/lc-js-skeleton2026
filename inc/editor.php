@@ -67,3 +67,37 @@ function lc_js_skeleton_disable_block_directory_inserter() {
 	remove_action( 'enqueue_block_editor_assets', 'wp_enqueue_editor_block_directory_assets' );
 }
 add_action( 'after_setup_theme', 'lc_js_skeleton_disable_block_directory_inserter' );
+
+/**
+ * Enqueue the "Lede" RichText format — a components-popover toolbar
+ * button (same selection popover as Bold/Italic/Link), not a block
+ * attribute. A block-level Font Size control can't give just the first
+ * paragraph of a RichText field its own size, only the whole field.
+ * Registered globally (not per-block) since it's a RichText-wide utility,
+ * matching every other custom format WordPress ships (bold/italic/etc are
+ * global too).
+ *
+ * Not auto-registered by inc/blocks.php's blocks/*\/block.json glob (this
+ * folder has no block.json — it's a format, not a block), so it needs its
+ * own explicit enqueue here.
+ *
+ * @return void
+ */
+function lc_js_skeleton_enqueue_lede_format() {
+	$asset_file = LC_JS_SKELETON_DIR . '/blocks/_editor-formats/build/index.asset.php';
+
+	if ( ! file_exists( $asset_file ) ) {
+		return;
+	}
+
+	$asset = require $asset_file;
+
+	wp_enqueue_script(
+		'lc-js-skeleton2026-editor-formats',
+		get_template_directory_uri() . '/blocks/_editor-formats/build/index.js',
+		$asset['dependencies'],
+		$asset['version'],
+		true
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'lc_js_skeleton_enqueue_lede_format' );

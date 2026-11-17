@@ -99,6 +99,64 @@ function get_icon( $name ) {
 }
 
 /**
+ * [contact_phone] shortcode — tel: link built from Site-Wide Settings'
+ * `phone` field, with the href normalised by parse_phone().
+ *
+ * @param array $atts class (string), text (string, defaults to the phone
+ *                    number itself).
+ * @return string
+ */
+function lc_js_skeleton_contact_phone_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'class' => '',
+			'text'  => '',
+		),
+		$atts,
+		'contact_phone'
+	);
+
+	$phone = lc_js_skeleton_get_setting( 'phone' );
+	if ( ! $phone ) {
+		return '';
+	}
+
+	$anchor_text = ! empty( $atts['text'] ) ? wp_kses_post( $atts['text'] ) : esc_html( $phone );
+
+	return '<a href="tel:' . esc_attr( parse_phone( $phone ) ) . '" class="' . esc_attr( $atts['class'] ) . '">' . $anchor_text . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $anchor_text built from wp_kses_post()/esc_html().
+}
+add_shortcode( 'contact_phone', 'lc_js_skeleton_contact_phone_shortcode' );
+
+/**
+ * [contact_email] shortcode — mailto: link built from Site-Wide Settings'
+ * `email` field, obfuscated with antispambot().
+ *
+ * @param array $atts class (string), text (string, defaults to the email
+ *                    address itself).
+ * @return string
+ */
+function lc_js_skeleton_contact_email_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'class' => '',
+			'text'  => '',
+		),
+		$atts,
+		'contact_email'
+	);
+
+	$email = lc_js_skeleton_get_setting( 'email' );
+	if ( ! $email ) {
+		return '';
+	}
+
+	$anchor_text = ! empty( $atts['text'] ) ? wp_kses_post( $atts['text'] ) : esc_html( $email );
+
+	return '<a href="mailto:' . esc_attr( antispambot( $email ) ) . '" class="' . esc_attr( $atts['class'] ) . '">' . $anchor_text . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $anchor_text built from wp_kses_post()/esc_html().
+}
+add_shortcode( 'contact_email', 'lc_js_skeleton_contact_email_shortcode' );
+
+/**
  * Queue Q&A pairs for the aggregated FAQPage JSON-LD schema, output once in
  * the footer by output_faq_schema(). Safe to call from multiple
  * FAQ-style blocks on the same page — everything queued is combined into a

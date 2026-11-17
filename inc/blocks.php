@@ -42,9 +42,15 @@ function lc_js_skeleton_core_block_type_args( $args, $name ) {
 	$GLOBALS['lc_js_skeleton_original_block_categories'][ $name ] = isset( $args['category'] ) ? $args['category'] : '';
 
 	$theme_namespace = wp_get_theme()->get( 'TextDomain' ) . '/';
-	$wrapped_blocks = array( 'core/paragraph', 'core/heading', 'core/list', 'core/separator' );
+	$wrapped_blocks  = array( 'core/paragraph', 'core/heading', 'core/list', 'core/separator', 'core/buttons' );
 
-	if ( 0 !== strpos( $name, $theme_namespace ) ) {
+	// Blocks editors expect in their natural categories — exempt from the
+	// Gutenberg-bucket regrouping below so they stay findable. core/quote
+	// lives under Text; burying it in the generic pile made editors conclude
+	// it was unavailable.
+	$keep_native_category = array( 'core/quote' );
+
+	if ( 0 !== strpos( $name, $theme_namespace ) && ! in_array( $name, $keep_native_category, true ) ) {
 		$args['category'] = 'gutenberg';
 	}
 
@@ -220,10 +226,17 @@ add_filter( 'allowed_block_types_all', 'lc_js_skeleton_disallow_unwanted_core_bl
 /**
  * Render callback that wraps a core block's content in .container.
  *
+ * Skipped on single blog posts: single.php is expected to nest its content
+ * inside its own .container, so per-block wrappers would double up there.
+ *
  * @param array  $attributes Block attributes — unused, required by the render_callback signature.
  * @param string $content    Rendered block content.
  * @return string
  */
 function lc_js_skeleton_wrap_block_in_container( $attributes, $content ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+	if ( is_single() ) {
+		return $content;
+	}
+
 	return '<div class="container">' . $content . '</div>';
 }

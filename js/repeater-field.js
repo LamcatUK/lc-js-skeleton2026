@@ -27,11 +27,11 @@
 			event.preventDefault();
 
 			var $button = $( this );
-			var $wrap = $button.closest( '.lc-js-skeleton-settings-repeater__image' );
+			var $wrap = $button.closest( '.lc-js-skeleton-settings-repeater__image, .lc-js-skeleton-settings-repeater__file' );
 
 			var frame = wp.media( {
 				title: $button.data( 'select-label' ),
-				button: { text: 'Use this image' },
+				button: { text: $button.data( 'button-text' ) || 'Use this image' },
 				multiple: false,
 			} );
 
@@ -43,6 +43,7 @@
 
 				$wrap.find( '.lc-js-skeleton-settings-repeater__image-input' ).val( attachment.id );
 				$wrap.find( 'img' ).attr( 'src', src ).show();
+				$wrap.find( '.lc-js-skeleton-settings-repeater__file-name' ).text( attachment.filename || attachment.title || '' );
 				$wrap.find( '.lc-js-skeleton-settings-repeater__clear-image' ).show();
 			} );
 
@@ -53,10 +54,11 @@
 			event.preventDefault();
 
 			var $button = $( this );
-			var $wrap = $button.closest( '.lc-js-skeleton-settings-repeater__image' );
+			var $wrap = $button.closest( '.lc-js-skeleton-settings-repeater__image, .lc-js-skeleton-settings-repeater__file' );
 
 			$wrap.find( '.lc-js-skeleton-settings-repeater__image-input' ).val( '' );
 			$wrap.find( 'img' ).attr( 'src', '' ).hide();
+			$wrap.find( '.lc-js-skeleton-settings-repeater__file-name' ).text( 'No file selected.' );
 			$button.hide();
 		} );
 	}

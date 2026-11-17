@@ -84,6 +84,10 @@
 
 html {
 	-webkit-text-size-adjust: 100%;
+	/* Never let the page itself scroll sideways — inner scroll wrappers
+	   (e.g. wide tables) handle their own overflow. clip rather than hidden
+	   so future position:sticky keeps working. */
+	overflow-x: clip;
 }
 
 body {
@@ -94,6 +98,8 @@ body {
 	line-height: var(--line-height-base);
 	color: var(--col-body);
 	background-color: var(--col-body-bg);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 h1,
@@ -182,6 +188,53 @@ ol {
 	clip: rect(0, 0, 0, 0) !important;
 	white-space: nowrap !important;
 	border: 0 !important;
+}
+
+.text-uppercase {
+	text-transform: uppercase;
+}
+
+.text-wrap-pretty {
+	text-wrap: pretty;
+}
+
+.align-self-center {
+	align-self: center !important;
+}
+
+/* Skip link — hidden until keyboard-focused, then a visible button pinned
+   top-left above everything. (.visually-hidden alone stays invisible on
+   focus, which defeats the point of a skip link.) */
+.skip-link {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	padding: 0 !important;
+	margin: -1px !important;
+	overflow: hidden !important;
+	clip: rect(0, 0, 0, 0) !important;
+	white-space: nowrap !important;
+	border: 0 !important;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+	position: fixed !important;
+	top: var(--space-2);
+	left: var(--space-2);
+	width: auto !important;
+	height: auto !important;
+	padding: var(--space-2) var(--space-3) !important;
+	margin: 0 !important;
+	overflow: visible !important;
+	clip: auto !important;
+	white-space: normal !important;
+	z-index: 200;
+	background-color: var(--col-black);
+	color: var(--col-white);
+	font-weight: var(--fw-700);
+	text-decoration: underline;
+	text-underline-offset: 0.15em;
 }
 
 /*
@@ -468,6 +521,21 @@ label {
    regardless of style load order, unlike an "apply then all:revert" pass
    which can fight with e.g. ACF's own admin CSS for its radio/checkbox UI
    if that CSS happens to load earlier in the same document. */
+/* Gravity Forms Consent field — checkbox + its acceptance label render as
+   siblings inside .ginput_container_consent (input, space, label), not
+   wrapped together, so this overrides the global block label above to keep
+   both on one line. */
+.ginput_container_consent {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.ginput_container_consent label {
+	display: inline;
+	margin-bottom: 0;
+}
+
 input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="image"]),
 textarea,
 select {
@@ -479,12 +547,15 @@ select {
 	background-color: var(--col-white);
 	color: var(--col-body);
 }
+
 :is(input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="image"]),textarea,select):focus-visible {
 		outline: 2px solid var(--col-primary);
 		outline-offset: 1px;
 	}
 
-.btn {
+.btn,
+.gform_button,
+.wp-block-button__link {
 	display: inline-block;
 	padding: var(--space-2) var(--space-3);
 	border: 1px solid var(--col-primary);
@@ -495,10 +566,103 @@ select {
 	cursor: pointer;
 }
 
-.btn:focus-visible {
+:is(.btn,.gform_button,.wp-block-button__link):focus-visible {
 		outline: 2px solid var(--col-primary);
 		outline-offset: 2px;
 	}
+
+/* Default Gutenberg quote (core/quote) — structural reset + citation dash.
+   Type comes from typography.css where a project maps it, so the editor
+   iframe matches the frontend automatically. */
+
+.wp-block-quote {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.wp-block-quote cite {
+	font-style: normal;
+}
+
+.wp-block-quote cite::before {
+	content: "\2014\00a0";
+}
+
+/* Footnotes ([Footnote] tags → numbered list, see inc/footnotes.php).
+   Ported from the lcp-footnotes plugin's own stylesheet so existing content
+   renders identically with the plugin gone — part of theme.min.css,
+   no separate stylesheet to enqueue. */
+
+.lcp-footnotes-box {
+	margin-top: 2rem;
+	padding: 1rem 1.25rem;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 0.875em;
+}
+
+.lcp-footnotes-box .lcp-footnotes-list {
+	margin: 0;
+	padding-left: 1.25rem;
+}
+
+.lcp-footnotes-box .lcp-footnotes-list li + li {
+	margin-top: 0.5em;
+}
+
+.lcp-footnote-backlink {
+	text-decoration: none;
+	margin-left: 0.25em;
+}
+
+/* Anchor targets (list entries and the in-text backlink targets): land
+   below the fixed header via the theme's --nav-height, degrading to
+   breathing room only without it. */
+[id^="footnote-"] {
+	scroll-margin-top: calc(var(--nav-height, var(--h-top, 0px)) + 1rem);
+}
+/* [Footnote] tags, see inc/footnotes.php */
+/* Table of contents ([lc_toc], inc/toc.php). Plain structured list; heading
+   ids are injected by filter, so anchors always resolve. h2 anchor targets
+   stop below a fixed nav when --nav-height is defined (see the fixed-header
+   module), degrading to breathing room only without it. */
+
+.lc-toc {
+	margin-block: 0 var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--col-grey-300);
+	border-radius: var(--radius-lg);
+	background-color: var(--col-grey-100);
+}
+
+.lc-toc__title {
+	margin-block: 0 var(--space-2);
+}
+
+.lc-toc__list {
+	margin: 0;
+	padding-left: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+
+.lc-toc__link {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.lc-toc__link:hover {
+	color: var(--col-primary);
+}
+
+article h2[id] {
+	scroll-margin-top: calc(var(--nav-height, 0px) + 1rem);
+}
+
+/* [lc_toc], see inc/toc.php */
 
 /* Generated by src/build/generate-utilities.js — do not hand-edit. */
 
@@ -540,29 +704,29 @@ select {
 .gap-4 { --gap-size: var(--space-4); gap: var(--space-4); }
 .gap-5 { --gap-size: var(--space-5); gap: var(--space-5); }
 .gap-6 { --gap-size: var(--space-6); gap: var(--space-6); }
-.col-1 { grid-column: span 1; }
-.col-2 { grid-column: span 2; }
-.col-3 { grid-column: span 3; }
-.col-4 { grid-column: span 4; }
-.col-5 { grid-column: span 5; }
-.col-6 { grid-column: span 6; }
-.col-7 { grid-column: span 7; }
-.col-8 { grid-column: span 8; }
-.col-9 { grid-column: span 9; }
-.col-10 { grid-column: span 10; }
-.col-11 { grid-column: span 11; }
-.col-12 { grid-column: span 12; }
-.offset-1 { margin-inline-start: 8.333333333333332%; }
-.offset-2 { margin-inline-start: 16.666666666666664%; }
-.offset-3 { margin-inline-start: 25%; }
-.offset-4 { margin-inline-start: 33.33333333333333%; }
-.offset-5 { margin-inline-start: 41.66666666666667%; }
-.offset-6 { margin-inline-start: 50%; }
-.offset-7 { margin-inline-start: 58.333333333333336%; }
-.offset-8 { margin-inline-start: 66.66666666666666%; }
-.offset-9 { margin-inline-start: 75%; }
-.offset-10 { margin-inline-start: 83.33333333333334%; }
-.offset-11 { margin-inline-start: 91.66666666666666%; }
+.col-1 { grid-column-end: span 1; }
+.col-2 { grid-column-end: span 2; }
+.col-3 { grid-column-end: span 3; }
+.col-4 { grid-column-end: span 4; }
+.col-5 { grid-column-end: span 5; }
+.col-6 { grid-column-end: span 6; }
+.col-7 { grid-column-end: span 7; }
+.col-8 { grid-column-end: span 8; }
+.col-9 { grid-column-end: span 9; }
+.col-10 { grid-column-end: span 10; }
+.col-11 { grid-column-end: span 11; }
+.col-12 { grid-column-end: span 12; }
+.offset-1 { grid-column-start: 2; }
+.offset-2 { grid-column-start: 3; }
+.offset-3 { grid-column-start: 4; }
+.offset-4 { grid-column-start: 5; }
+.offset-5 { grid-column-start: 6; }
+.offset-6 { grid-column-start: 7; }
+.offset-7 { grid-column-start: 8; }
+.offset-8 { grid-column-start: 9; }
+.offset-9 { grid-column-start: 10; }
+.offset-10 { grid-column-start: 11; }
+.offset-11 { grid-column-start: 12; }
 .m-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 .p-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 .mt-0 { margin-top: var(--space-0); }
@@ -699,29 +863,29 @@ select {
 	.gap-sm-4 { --gap-size: var(--space-4); gap: var(--space-4); }
 	.gap-sm-5 { --gap-size: var(--space-5); gap: var(--space-5); }
 	.gap-sm-6 { --gap-size: var(--space-6); gap: var(--space-6); }
-	.col-sm-1 { grid-column: span 1; }
-	.col-sm-2 { grid-column: span 2; }
-	.col-sm-3 { grid-column: span 3; }
-	.col-sm-4 { grid-column: span 4; }
-	.col-sm-5 { grid-column: span 5; }
-	.col-sm-6 { grid-column: span 6; }
-	.col-sm-7 { grid-column: span 7; }
-	.col-sm-8 { grid-column: span 8; }
-	.col-sm-9 { grid-column: span 9; }
-	.col-sm-10 { grid-column: span 10; }
-	.col-sm-11 { grid-column: span 11; }
-	.col-sm-12 { grid-column: span 12; }
-	.offset-sm-1 { margin-inline-start: 8.333333333333332%; }
-	.offset-sm-2 { margin-inline-start: 16.666666666666664%; }
-	.offset-sm-3 { margin-inline-start: 25%; }
-	.offset-sm-4 { margin-inline-start: 33.33333333333333%; }
-	.offset-sm-5 { margin-inline-start: 41.66666666666667%; }
-	.offset-sm-6 { margin-inline-start: 50%; }
-	.offset-sm-7 { margin-inline-start: 58.333333333333336%; }
-	.offset-sm-8 { margin-inline-start: 66.66666666666666%; }
-	.offset-sm-9 { margin-inline-start: 75%; }
-	.offset-sm-10 { margin-inline-start: 83.33333333333334%; }
-	.offset-sm-11 { margin-inline-start: 91.66666666666666%; }
+	.col-sm-1 { grid-column-end: span 1; }
+	.col-sm-2 { grid-column-end: span 2; }
+	.col-sm-3 { grid-column-end: span 3; }
+	.col-sm-4 { grid-column-end: span 4; }
+	.col-sm-5 { grid-column-end: span 5; }
+	.col-sm-6 { grid-column-end: span 6; }
+	.col-sm-7 { grid-column-end: span 7; }
+	.col-sm-8 { grid-column-end: span 8; }
+	.col-sm-9 { grid-column-end: span 9; }
+	.col-sm-10 { grid-column-end: span 10; }
+	.col-sm-11 { grid-column-end: span 11; }
+	.col-sm-12 { grid-column-end: span 12; }
+	.offset-sm-1 { grid-column-start: 2; }
+	.offset-sm-2 { grid-column-start: 3; }
+	.offset-sm-3 { grid-column-start: 4; }
+	.offset-sm-4 { grid-column-start: 5; }
+	.offset-sm-5 { grid-column-start: 6; }
+	.offset-sm-6 { grid-column-start: 7; }
+	.offset-sm-7 { grid-column-start: 8; }
+	.offset-sm-8 { grid-column-start: 9; }
+	.offset-sm-9 { grid-column-start: 10; }
+	.offset-sm-10 { grid-column-start: 11; }
+	.offset-sm-11 { grid-column-start: 12; }
 	.m-sm-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-sm-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-sm-0 { margin-top: var(--space-0); }
@@ -859,29 +1023,29 @@ select {
 	.gap-md-4 { --gap-size: var(--space-4); gap: var(--space-4); }
 	.gap-md-5 { --gap-size: var(--space-5); gap: var(--space-5); }
 	.gap-md-6 { --gap-size: var(--space-6); gap: var(--space-6); }
-	.col-md-1 { grid-column: span 1; }
-	.col-md-2 { grid-column: span 2; }
-	.col-md-3 { grid-column: span 3; }
-	.col-md-4 { grid-column: span 4; }
-	.col-md-5 { grid-column: span 5; }
-	.col-md-6 { grid-column: span 6; }
-	.col-md-7 { grid-column: span 7; }
-	.col-md-8 { grid-column: span 8; }
-	.col-md-9 { grid-column: span 9; }
-	.col-md-10 { grid-column: span 10; }
-	.col-md-11 { grid-column: span 11; }
-	.col-md-12 { grid-column: span 12; }
-	.offset-md-1 { margin-inline-start: 8.333333333333332%; }
-	.offset-md-2 { margin-inline-start: 16.666666666666664%; }
-	.offset-md-3 { margin-inline-start: 25%; }
-	.offset-md-4 { margin-inline-start: 33.33333333333333%; }
-	.offset-md-5 { margin-inline-start: 41.66666666666667%; }
-	.offset-md-6 { margin-inline-start: 50%; }
-	.offset-md-7 { margin-inline-start: 58.333333333333336%; }
-	.offset-md-8 { margin-inline-start: 66.66666666666666%; }
-	.offset-md-9 { margin-inline-start: 75%; }
-	.offset-md-10 { margin-inline-start: 83.33333333333334%; }
-	.offset-md-11 { margin-inline-start: 91.66666666666666%; }
+	.col-md-1 { grid-column-end: span 1; }
+	.col-md-2 { grid-column-end: span 2; }
+	.col-md-3 { grid-column-end: span 3; }
+	.col-md-4 { grid-column-end: span 4; }
+	.col-md-5 { grid-column-end: span 5; }
+	.col-md-6 { grid-column-end: span 6; }
+	.col-md-7 { grid-column-end: span 7; }
+	.col-md-8 { grid-column-end: span 8; }
+	.col-md-9 { grid-column-end: span 9; }
+	.col-md-10 { grid-column-end: span 10; }
+	.col-md-11 { grid-column-end: span 11; }
+	.col-md-12 { grid-column-end: span 12; }
+	.offset-md-1 { grid-column-start: 2; }
+	.offset-md-2 { grid-column-start: 3; }
+	.offset-md-3 { grid-column-start: 4; }
+	.offset-md-4 { grid-column-start: 5; }
+	.offset-md-5 { grid-column-start: 6; }
+	.offset-md-6 { grid-column-start: 7; }
+	.offset-md-7 { grid-column-start: 8; }
+	.offset-md-8 { grid-column-start: 9; }
+	.offset-md-9 { grid-column-start: 10; }
+	.offset-md-10 { grid-column-start: 11; }
+	.offset-md-11 { grid-column-start: 12; }
 	.m-md-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-md-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-md-0 { margin-top: var(--space-0); }
@@ -1019,29 +1183,29 @@ select {
 	.gap-lg-4 { --gap-size: var(--space-4); gap: var(--space-4); }
 	.gap-lg-5 { --gap-size: var(--space-5); gap: var(--space-5); }
 	.gap-lg-6 { --gap-size: var(--space-6); gap: var(--space-6); }
-	.col-lg-1 { grid-column: span 1; }
-	.col-lg-2 { grid-column: span 2; }
-	.col-lg-3 { grid-column: span 3; }
-	.col-lg-4 { grid-column: span 4; }
-	.col-lg-5 { grid-column: span 5; }
-	.col-lg-6 { grid-column: span 6; }
-	.col-lg-7 { grid-column: span 7; }
-	.col-lg-8 { grid-column: span 8; }
-	.col-lg-9 { grid-column: span 9; }
-	.col-lg-10 { grid-column: span 10; }
-	.col-lg-11 { grid-column: span 11; }
-	.col-lg-12 { grid-column: span 12; }
-	.offset-lg-1 { margin-inline-start: 8.333333333333332%; }
-	.offset-lg-2 { margin-inline-start: 16.666666666666664%; }
-	.offset-lg-3 { margin-inline-start: 25%; }
-	.offset-lg-4 { margin-inline-start: 33.33333333333333%; }
-	.offset-lg-5 { margin-inline-start: 41.66666666666667%; }
-	.offset-lg-6 { margin-inline-start: 50%; }
-	.offset-lg-7 { margin-inline-start: 58.333333333333336%; }
-	.offset-lg-8 { margin-inline-start: 66.66666666666666%; }
-	.offset-lg-9 { margin-inline-start: 75%; }
-	.offset-lg-10 { margin-inline-start: 83.33333333333334%; }
-	.offset-lg-11 { margin-inline-start: 91.66666666666666%; }
+	.col-lg-1 { grid-column-end: span 1; }
+	.col-lg-2 { grid-column-end: span 2; }
+	.col-lg-3 { grid-column-end: span 3; }
+	.col-lg-4 { grid-column-end: span 4; }
+	.col-lg-5 { grid-column-end: span 5; }
+	.col-lg-6 { grid-column-end: span 6; }
+	.col-lg-7 { grid-column-end: span 7; }
+	.col-lg-8 { grid-column-end: span 8; }
+	.col-lg-9 { grid-column-end: span 9; }
+	.col-lg-10 { grid-column-end: span 10; }
+	.col-lg-11 { grid-column-end: span 11; }
+	.col-lg-12 { grid-column-end: span 12; }
+	.offset-lg-1 { grid-column-start: 2; }
+	.offset-lg-2 { grid-column-start: 3; }
+	.offset-lg-3 { grid-column-start: 4; }
+	.offset-lg-4 { grid-column-start: 5; }
+	.offset-lg-5 { grid-column-start: 6; }
+	.offset-lg-6 { grid-column-start: 7; }
+	.offset-lg-7 { grid-column-start: 8; }
+	.offset-lg-8 { grid-column-start: 9; }
+	.offset-lg-9 { grid-column-start: 10; }
+	.offset-lg-10 { grid-column-start: 11; }
+	.offset-lg-11 { grid-column-start: 12; }
 	.m-lg-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-lg-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-lg-0 { margin-top: var(--space-0); }
@@ -1179,29 +1343,29 @@ select {
 	.gap-xl-4 { --gap-size: var(--space-4); gap: var(--space-4); }
 	.gap-xl-5 { --gap-size: var(--space-5); gap: var(--space-5); }
 	.gap-xl-6 { --gap-size: var(--space-6); gap: var(--space-6); }
-	.col-xl-1 { grid-column: span 1; }
-	.col-xl-2 { grid-column: span 2; }
-	.col-xl-3 { grid-column: span 3; }
-	.col-xl-4 { grid-column: span 4; }
-	.col-xl-5 { grid-column: span 5; }
-	.col-xl-6 { grid-column: span 6; }
-	.col-xl-7 { grid-column: span 7; }
-	.col-xl-8 { grid-column: span 8; }
-	.col-xl-9 { grid-column: span 9; }
-	.col-xl-10 { grid-column: span 10; }
-	.col-xl-11 { grid-column: span 11; }
-	.col-xl-12 { grid-column: span 12; }
-	.offset-xl-1 { margin-inline-start: 8.333333333333332%; }
-	.offset-xl-2 { margin-inline-start: 16.666666666666664%; }
-	.offset-xl-3 { margin-inline-start: 25%; }
-	.offset-xl-4 { margin-inline-start: 33.33333333333333%; }
-	.offset-xl-5 { margin-inline-start: 41.66666666666667%; }
-	.offset-xl-6 { margin-inline-start: 50%; }
-	.offset-xl-7 { margin-inline-start: 58.333333333333336%; }
-	.offset-xl-8 { margin-inline-start: 66.66666666666666%; }
-	.offset-xl-9 { margin-inline-start: 75%; }
-	.offset-xl-10 { margin-inline-start: 83.33333333333334%; }
-	.offset-xl-11 { margin-inline-start: 91.66666666666666%; }
+	.col-xl-1 { grid-column-end: span 1; }
+	.col-xl-2 { grid-column-end: span 2; }
+	.col-xl-3 { grid-column-end: span 3; }
+	.col-xl-4 { grid-column-end: span 4; }
+	.col-xl-5 { grid-column-end: span 5; }
+	.col-xl-6 { grid-column-end: span 6; }
+	.col-xl-7 { grid-column-end: span 7; }
+	.col-xl-8 { grid-column-end: span 8; }
+	.col-xl-9 { grid-column-end: span 9; }
+	.col-xl-10 { grid-column-end: span 10; }
+	.col-xl-11 { grid-column-end: span 11; }
+	.col-xl-12 { grid-column-end: span 12; }
+	.offset-xl-1 { grid-column-start: 2; }
+	.offset-xl-2 { grid-column-start: 3; }
+	.offset-xl-3 { grid-column-start: 4; }
+	.offset-xl-4 { grid-column-start: 5; }
+	.offset-xl-5 { grid-column-start: 6; }
+	.offset-xl-6 { grid-column-start: 7; }
+	.offset-xl-7 { grid-column-start: 8; }
+	.offset-xl-8 { grid-column-start: 9; }
+	.offset-xl-9 { grid-column-start: 10; }
+	.offset-xl-10 { grid-column-start: 11; }
+	.offset-xl-11 { grid-column-start: 12; }
 	.m-xl-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-xl-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-xl-0 { margin-top: var(--space-0); }
@@ -1339,29 +1503,29 @@ select {
 	.gap-xxl-4 { --gap-size: var(--space-4); gap: var(--space-4); }
 	.gap-xxl-5 { --gap-size: var(--space-5); gap: var(--space-5); }
 	.gap-xxl-6 { --gap-size: var(--space-6); gap: var(--space-6); }
-	.col-xxl-1 { grid-column: span 1; }
-	.col-xxl-2 { grid-column: span 2; }
-	.col-xxl-3 { grid-column: span 3; }
-	.col-xxl-4 { grid-column: span 4; }
-	.col-xxl-5 { grid-column: span 5; }
-	.col-xxl-6 { grid-column: span 6; }
-	.col-xxl-7 { grid-column: span 7; }
-	.col-xxl-8 { grid-column: span 8; }
-	.col-xxl-9 { grid-column: span 9; }
-	.col-xxl-10 { grid-column: span 10; }
-	.col-xxl-11 { grid-column: span 11; }
-	.col-xxl-12 { grid-column: span 12; }
-	.offset-xxl-1 { margin-inline-start: 8.333333333333332%; }
-	.offset-xxl-2 { margin-inline-start: 16.666666666666664%; }
-	.offset-xxl-3 { margin-inline-start: 25%; }
-	.offset-xxl-4 { margin-inline-start: 33.33333333333333%; }
-	.offset-xxl-5 { margin-inline-start: 41.66666666666667%; }
-	.offset-xxl-6 { margin-inline-start: 50%; }
-	.offset-xxl-7 { margin-inline-start: 58.333333333333336%; }
-	.offset-xxl-8 { margin-inline-start: 66.66666666666666%; }
-	.offset-xxl-9 { margin-inline-start: 75%; }
-	.offset-xxl-10 { margin-inline-start: 83.33333333333334%; }
-	.offset-xxl-11 { margin-inline-start: 91.66666666666666%; }
+	.col-xxl-1 { grid-column-end: span 1; }
+	.col-xxl-2 { grid-column-end: span 2; }
+	.col-xxl-3 { grid-column-end: span 3; }
+	.col-xxl-4 { grid-column-end: span 4; }
+	.col-xxl-5 { grid-column-end: span 5; }
+	.col-xxl-6 { grid-column-end: span 6; }
+	.col-xxl-7 { grid-column-end: span 7; }
+	.col-xxl-8 { grid-column-end: span 8; }
+	.col-xxl-9 { grid-column-end: span 9; }
+	.col-xxl-10 { grid-column-end: span 10; }
+	.col-xxl-11 { grid-column-end: span 11; }
+	.col-xxl-12 { grid-column-end: span 12; }
+	.offset-xxl-1 { grid-column-start: 2; }
+	.offset-xxl-2 { grid-column-start: 3; }
+	.offset-xxl-3 { grid-column-start: 4; }
+	.offset-xxl-4 { grid-column-start: 5; }
+	.offset-xxl-5 { grid-column-start: 6; }
+	.offset-xxl-6 { grid-column-start: 7; }
+	.offset-xxl-7 { grid-column-start: 8; }
+	.offset-xxl-8 { grid-column-start: 9; }
+	.offset-xxl-9 { grid-column-start: 10; }
+	.offset-xxl-10 { grid-column-start: 11; }
+	.offset-xxl-11 { grid-column-start: 12; }
 	.m-xxl-0 { margin-top: var(--space-0); margin-right: var(--space-0); margin-bottom: var(--space-0); margin-left: var(--space-0); }
 	.p-xxl-0 { padding-top: var(--space-0); padding-right: var(--space-0); padding-bottom: var(--space-0); padding-left: var(--space-0); }
 	.mt-xxl-0 { margin-top: var(--space-0); }

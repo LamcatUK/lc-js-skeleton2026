@@ -5,6 +5,9 @@
 @import "nav.css";
 @import "footer.css";
 @import "forms.css";
+@import "quote.css";
+@import "footnotes.css"; /* [Footnote] tags, see inc/footnotes.php */
+@import "toc.css"; /* [lc_toc], see inc/toc.php */
 @import "utilities.css"; /* generated — see src/build/generate-utilities.js, run `npm run css-generate` */
 /* @import "tables.css"; -- uncomment if this project actually needs styled tables */
 /* @import "accordion.css"; -- uncomment if this project actually needs styled accordions */

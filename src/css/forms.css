@@ -21,6 +21,21 @@ label {
    regardless of style load order, unlike an "apply then all:revert" pass
    which can fight with e.g. ACF's own admin CSS for its radio/checkbox UI
    if that CSS happens to load earlier in the same document. */
+/* Gravity Forms Consent field — checkbox + its acceptance label render as
+   siblings inside .ginput_container_consent (input, space, label), not
+   wrapped together, so this overrides the global block label above to keep
+   both on one line. */
+.ginput_container_consent {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.ginput_container_consent label {
+	display: inline;
+	margin-bottom: 0;
+}
+
 input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="image"]),
 textarea,
 select {
@@ -38,7 +53,9 @@ select {
 	}
 }
 
-.btn {
+.btn,
+.gform_button,
+.wp-block-button__link {
 	display: inline-block;
 	padding: var(--space-2) var(--space-3);
 	border: 1px solid var(--col-primary);

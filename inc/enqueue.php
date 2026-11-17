@@ -33,12 +33,14 @@ add_action( 'wp_enqueue_scripts', 'lc_js_skeleton_enqueue_styles' );
  * (e.g. gsap.min.js 3.12.7 cdn.jsdelivr.net/npm/gsap) since it's vendored by
  * hand rather than tracked in package.json.
  *
- * @param string $handle Handle to register under.
- * @param string $file   Filename within js/vendor/.
- * @param bool   $is_css True to enqueue as a stylesheet rather than a script.
+ * @param string   $handle Handle to register under.
+ * @param string   $file   Filename within js/vendor/.
+ * @param bool     $is_css True to enqueue as a stylesheet rather than a script.
+ * @param string[] $deps   Other registered handles this depends on (e.g. a
+ *                         gsap plugin depending on the 'gsap' handle itself).
  * @return void
  */
-function lc_js_skeleton_enqueue_vendor( $handle, $file, $is_css = false ) {
+function lc_js_skeleton_enqueue_vendor( $handle, $file, $is_css = false, $deps = array() ) {
 	$rel = '/js/vendor/' . $file;
 	$abs = get_stylesheet_directory() . $rel;
 	if ( ! file_exists( $abs ) ) {
@@ -46,11 +48,24 @@ function lc_js_skeleton_enqueue_vendor( $handle, $file, $is_css = false ) {
 	}
 	$url = get_stylesheet_directory_uri() . $rel;
 	if ( $is_css ) {
-		wp_enqueue_style( $handle, $url, array(), filemtime( $abs ) );
+		wp_enqueue_style( $handle, $url, $deps, filemtime( $abs ) );
 	} else {
-		wp_enqueue_script( $handle, $url, array(), filemtime( $abs ), true );
+		wp_enqueue_script( $handle, $url, $deps, filemtime( $abs ), true );
 	}
 }
+
+/**
+ * Enqueue Adobe Fonts (Typekit) — frontend and block editor alike, so the
+ * editor iframe renders the same faces as the frontend. Disabled until a
+ * project sets its kit ID: uncomment the body and the two add_action()s.
+ *
+ * @return void
+ */
+function lc_js_skeleton_enqueue_fonts() {
+	// wp_enqueue_style( 'lc-js-skeleton-typekit', 'https://use.typekit.net/KIT_ID.css', array(), null );
+}
+// add_action( 'wp_enqueue_scripts', 'lc_js_skeleton_enqueue_fonts' );
+// add_action( 'enqueue_block_editor_assets', 'lc_js_skeleton_enqueue_fonts' );
 
 /**
  * Enqueue theme.min.js.

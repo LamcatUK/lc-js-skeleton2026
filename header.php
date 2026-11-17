@@ -14,7 +14,7 @@
 </head>
 
 <body <?php body_class(); ?>>
-<a class="visually-hidden" href="#main">Skip to content</a>
+<a class="skip-link" href="#main">Skip to content</a>
 <?php wp_body_open(); ?>
 
 <!-- HEADER-NAV:START -->

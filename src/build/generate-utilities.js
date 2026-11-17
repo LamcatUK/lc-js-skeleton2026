@@ -25,6 +25,20 @@ const cssDir = path.resolve(__dirname, '../css');
 const blocksStylesDir = path.resolve(__dirname, '../blocks');
 const tokensFile = path.resolve(cssDir, 'tokens.css');
 
+// Reads --{prefix}* custom properties out of tokens.css's :root blocks
+// (shared reader with generate-theme-json.js) so a utility's value set stays
+// in sync with the token scale with no second place to edit.
+function readTokenValues(prefix) {
+	const tokens = readTokensFromFile(tokensFile);
+	const values = {};
+	for (const key of Object.keys(tokens)) {
+		if (key.startsWith(prefix)) {
+			values[key.slice(prefix.length)] = `var(--${key})`;
+		}
+	}
+	return values;
+}
+
 function generateUtilities() {
 	const rulesByBreakpoint = {};
 	for (const bp of Object.keys(breakpoints)) {
@@ -34,8 +48,7 @@ function generateUtilities() {
 	// display / flex-direction / justify-content / align-items / text-align / font-weight
 	for (const [key, def] of Object.entries(utilities)) {
 		const base = def.className || key;
-		const tokens = readTokensFromFile(tokensFile);
-		const values = def.tokenPrefix ? tokens : def.values;
+		const values = def.tokenPrefix ? readTokenValues(def.tokenPrefix) : def.values;
 		const bps = def.responsive === false ? [''] : Object.keys(breakpoints);
 		for (const bp of bps) {
 			for (const [suffix, value] of Object.entries(values)) {
@@ -62,23 +75,32 @@ function generateUtilities() {
 		}
 	}
 
-	// col-{n} / col-{bp}-{n} — grid column span, base + every breakpoint
+	// col-{n} / col-{bp}-{n} — grid column span, base + every breakpoint.
+	//
+	// Deliberately the longhand grid-column-end (not the `grid-column: span
+	// N` shorthand) so this can compose with offset-* below. A single bare
+	// value in the grid-column SHORTHAND is assigned to grid-column-START,
+	// not -end — so col-N and offset-N, as separate classes on the same
+	// element, would both resolve to grid-column-start and the later one in
+	// the cascade would silently wipe the other out (col-6 offset-3 rendered
+	// 1 track wide). Setting col-N's span on -end only, and offset-N's line
+	// number on -start only, makes them independent longhands that compose.
 	for (const bp of Object.keys(breakpoints)) {
 		for (let n = 1; n <= gridColumns; n++) {
 			const className = bp ? `col-${bp}-${n}` : `col-${n}`;
-			rulesByBreakpoint[bp].push(`.${className} { grid-column: span ${n}; }`);
+			rulesByBreakpoint[bp].push(`.${className} { grid-column-end: span ${n}; }`);
 		}
 	}
 
-	// offset-{n} / offset-{bp}-{n} — push a column start via margin, the same
-	// technique Bootstrap uses (works the same on a grid item as a flex one).
-	// n goes to gridColumns - 1: offsetting by the full column count would
-	// push a column past the end of its own row.
+	// offset-{n} / offset-{bp}-{n} — push a .row column over by n tracks, via
+	// an explicit grid-column-start line number (1-indexed — line n+1 leaves n
+	// empty tracks before the item). Composes with col-N above because that
+	// sets grid-column-end only. n goes to gridColumns - 1: offsetting by the
+	// full column count would push a column past the end of its own row.
 	for (const bp of Object.keys(breakpoints)) {
 		for (let n = 1; n < gridColumns; n++) {
 			const className = bp ? `offset-${bp}-${n}` : `offset-${n}`;
-			const percent = (n / gridColumns) * 100;
-			rulesByBreakpoint[bp].push(`.${className} { margin-inline-start: ${percent}%; }`);
+			rulesByBreakpoint[bp].push(`.${className} { grid-column-start: ${n + 1}; }`);
 		}
 	}
 
@@ -124,7 +146,7 @@ function generateUtilities() {
 			output += `@media (min-width: ${px}px) {\n${rules
 				.split('\n')
 				.map((l) => '\t' + l)
-				.join('\n')}\n\n`;
+				.join('\n')}\n}\n\n`;
 		}
 	}
 
